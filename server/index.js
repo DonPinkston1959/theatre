@@ -215,7 +215,7 @@ function cleanText(text) {
     
     // Process shows and link with company data
     console.log('\n=== PROCESSING SHOWS ===');
-    const newEvents = [];
+    let newEvents = [];
     const newTheatres = new Set();
 
     for (const show of showsData) {
@@ -267,7 +267,7 @@ function cleanText(text) {
           name: show['name'],
           NAME: show['NAME']
         });
-      }</action>
+      }
 
       // Validate required fields
       if (event.title && event.theatreName && event.date) {
@@ -293,6 +293,17 @@ function cleanText(text) {
         });
       }
     }
+
+    // Remove any duplicate events by title, theatre, and date
+    const seenEventKeys = new Set();
+    newEvents = newEvents.filter(event => {
+      const key = `${event.title}|${event.theatreName}|${event.date}`;
+      if (seenEventKeys.has(key)) {
+        return false;
+      }
+      seenEventKeys.add(key);
+      return true;
+    });
 
     console.log('Valid events processed:', newEvents.length);
 
