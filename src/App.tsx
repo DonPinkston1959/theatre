@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Theater as Theatre, Palette, Settings, Plus } from 'lucide-react';
+import { Theater as Theatre, Settings } from 'lucide-react';
 import Calendar from './components/Calendar';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
@@ -21,9 +21,11 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = async (skipLoading = false) => {
     try {
-      setLoading(true);
+      if (!skipLoading) {
+        setLoading(true);
+      }
       const [eventsResponse, theatresResponse] = await Promise.all([
         fetch('http://localhost:3001/api/events'),
         fetch('http://localhost:3001/api/theatres')
@@ -43,7 +45,9 @@ function App() {
       setError('Failed to load events. Please try again later.');
       console.error('Error fetching data:', err);
     } finally {
-      setLoading(false);
+      if (!skipLoading) {
+        setLoading(false);
+      }
     }
   };
 
