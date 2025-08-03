@@ -267,7 +267,7 @@ function cleanText(text) {
           name: show['name'],
           NAME: show['NAME']
         });
-      }</action>
+        }
 
       // Validate required fields
       if (event.title && event.theatreName && event.date) {

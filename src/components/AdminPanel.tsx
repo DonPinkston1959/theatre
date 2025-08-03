@@ -36,6 +36,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         setMessage({ type: 'error', text: 'Invalid password' });
       }
     } catch (error) {
+      console.error(error);
       setMessage({ type: 'error', text: 'Connection error' });
     }
   };
@@ -63,9 +64,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       const result = await response.json();
       
       if (result.success) {
-        setMessage({ 
-          type: 'success', 
-          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events, ${result.addedTheatres} new theatres, and updated ${result.updatedTheatres} existing theatres.` 
+        setMessage({
+          type: 'success',
+          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events and ${result.addedTheatres} new theatres.`
         });
         setFile(null);
         // Reset file input
@@ -76,6 +77,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         setMessage({ type: 'error', text: result.message });
       }
     } catch (error) {
+      console.error(error);
       setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
     } finally {
       setUploading(false);
