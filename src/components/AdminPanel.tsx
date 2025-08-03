@@ -4,7 +4,7 @@ import { Upload, Lock, AlertCircle, CheckCircle, X } from 'lucide-react';
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onDataUpdate: () => void;
+  onDataUpdate: (skipLoading?: boolean) => Promise<void>;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }) => {
@@ -36,6 +36,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         setMessage({ type: 'error', text: 'Invalid password' });
       }
     } catch (error) {
+      console.error('Authentication error:', error);
       setMessage({ type: 'error', text: 'Connection error' });
     }
   };
@@ -71,11 +72,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         // Reset file input
         const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
-        onDataUpdate();
+        onDataUpdate(true);
       } else {
         setMessage({ type: 'error', text: result.message });
       }
     } catch (error) {
+      console.error('Upload failed:', error);
       setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
     } finally {
       setUploading(false);
