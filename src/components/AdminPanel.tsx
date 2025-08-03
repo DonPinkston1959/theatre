@@ -74,7 +74,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       if (result.success) {
         setMessage({
           type: 'success',
-          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events, ${result.addedTheatres} new theatres, and updated ${result.updatedTheatres} existing theatres.`
+          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events and ${result.addedTheatres} new theatres.`
         });
         setFile(null);
         // Reset file input
