@@ -267,7 +267,7 @@ function cleanText(text) {
           name: show['name'],
           NAME: show['NAME']
         });
-      }</action>
+      }
 
       // Validate required fields
       if (event.title && event.theatreName && event.date) {
@@ -469,7 +469,7 @@ function formatTime(timeInput) {
   
   // If no match, try to extract just numbers
   const numMatch = timeStr.match(/(\d{1,2})(\d{2})/);
-  if (numMatch && timeStr.length === 3 || timeStr.length === 4) {
+  if (numMatch && (timeStr.length === 3 || timeStr.length === 4)) {
     const hours = numMatch[1];
     const minutes = numMatch[2] || '00';
     const formatted = `${hours.padStart(2, '0')}:${minutes}`;
@@ -483,15 +483,20 @@ function formatTime(timeInput) {
 // Helper function to parse boolean values
 function parseBoolean(value) {
   if (!value) return false;
-  
+
   const str = value.toString().toLowerCase().trim();
   return str === 'true' || str === 'yes' || str === '1' || str === 'available' || str === 'offered' || str === 'y';
 }
+
+export { formatTime };
+
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
