@@ -27,15 +27,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setIsAuthenticated(true);
         setMessage({ type: 'success', text: 'Authentication successful!' });
         setTimeout(() => setMessage(null), 2000);
       } else {
+        console.warn('Invalid admin password attempt', result);
         setMessage({ type: 'error', text: 'Invalid password' });
       }
     } catch (error) {
+      console.error('Error verifying admin password:', error);
       setMessage({ type: 'error', text: 'Connection error' });
     }
   };
@@ -60,12 +62,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         body: formData,
       });
 
+      if (!response.ok) {
+        console.error('Upload request failed with status', response.status);
+        alert('Upload failed. Server responded with an error.');
+        setMessage({ type: 'error', text: 'Upload failed. Server error.' });
+        return;
+      }
+
       const result = await response.json();
-      
+
       if (result.success) {
-        setMessage({ 
-          type: 'success', 
-          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events, ${result.addedTheatres} new theatres, and updated ${result.updatedTheatres} existing theatres.` 
+        setMessage({
+          type: 'success',
+          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events, ${result.addedTheatres} new theatres, and updated ${result.updatedTheatres} existing theatres.`
         });
         setFile(null);
         // Reset file input
@@ -73,9 +82,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         if (fileInput) fileInput.value = '';
         onDataUpdate();
       } else {
-        setMessage({ type: 'error', text: result.message });
+        console.warn('Upload failed:', result);
+        alert(result.message || 'Upload failed. Please try again.');
+        setMessage({ type: 'error', text: result.message || 'Upload failed. Please try again.' });
       }
     } catch (error) {
+      console.error('Error during file upload:', error);
+      alert('Upload failed. Please try again.');
       setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
     } finally {
       setUploading(false);
