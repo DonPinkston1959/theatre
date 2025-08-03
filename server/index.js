@@ -112,7 +112,7 @@ app.post('/api/admin/upload', upload.single('file'), (req, res) => {
     console.log('Processing file:', req.file.originalname);
 
     // Read the Excel file
-    const workbook = XLSX.readFile(req.file.path);
+    const workbook = XLSX.default.readFile(req.file.path);
     
     console.log('Available sheets:', workbook.SheetNames);
     
