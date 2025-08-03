@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, Lock, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { useToast } from './Toast';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { addToast } = useToast();
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +37,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       } else {
         setMessage({ type: 'error', text: 'Invalid password' });
       }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Connection error' });
-    }
+      } catch {
+        setMessage({ type: 'error', text: 'Connection error' });
+      }
   };
 
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -63,9 +65,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       const result = await response.json();
       
       if (result.success) {
-        setMessage({ 
-          type: 'success', 
-          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events, ${result.addedTheatres} new theatres, and updated ${result.updatedTheatres} existing theatres.` 
+        setMessage({
+          type: 'success',
+          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events, ${result.addedTheatres} new theatres, and updated ${result.updatedTheatres} existing theatres.`
+        });
+        addToast({
+          type: 'success',
+          message: `Added ${result.addedEvents} events, ${result.addedTheatres} theatres, updated ${result.updatedTheatres} theatres.`
         });
         setFile(null);
         // Reset file input
@@ -75,7 +81,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       } else {
         setMessage({ type: 'error', text: result.message });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
     } finally {
       setUploading(false);
