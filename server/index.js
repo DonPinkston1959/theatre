@@ -216,7 +216,7 @@ function cleanText(text) {
     // Process shows and link with company data
     console.log('\n=== PROCESSING SHOWS ===');
     const newEvents = [];
-    const newTheatres = new Set();
+    const newTheatres = new Map();
 
     for (const show of showsData) {
       console.log(`\n--- Processing show ${newEvents.length + 1} ---`);
@@ -267,7 +267,7 @@ function cleanText(text) {
           name: show['name'],
           NAME: show['NAME']
         });
-      }</action>
+      }
 
       // Validate required fields
       if (event.title && event.theatreName && event.date) {
@@ -276,7 +276,7 @@ function cleanText(text) {
         
         // Add company as theatre with full details
         if (company) {
-          newTheatres.add({
+          newTheatres.set(finalCompanyName, {
             name: finalCompanyName,
             website: company.website,
             address: company.address,
@@ -311,13 +311,8 @@ function cleanText(text) {
 
     // Add new theatres
     const existingTheatres = data.theatres || [];
-    const theatresToAdd = Array.from(newTheatres).filter(newTheatre => {
+    const theatresToAdd = Array.from(newTheatres.values()).filter(newTheatre => {
       return !existingTheatres.some(existing => existing.name === newTheatre.name);
-    }).map(theatre => {
-      if (typeof theatre === 'string') {
-        return { name: theatre, website: '', address: '' };
-      }
-      return theatre;
     });
 
     // Update data
