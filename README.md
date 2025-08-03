@@ -7,7 +7,7 @@ A comprehensive theatre events website for the Kansas City area, featuring a cal
 ### Core Functionality
 - **Interactive Calendar**: Month, Week, and Day views with seamless switching
 - **Event Display**: Events shown directly on calendar with color-coded types
-- **Event Popups**: Detailed information with theatre website links
+- **Event Popups**: Detailed information with theatre website and ticket purchase links
 - **Mobile Responsive**: Optimized for all device sizes
 
 ### Filtering System
@@ -39,6 +39,7 @@ The Excel file should contain the following columns:
 ### Optional Columns:
 - **Venue**: Specific venue name (if different from theatre)
 - **Price**: Ticket price range
+- **Ticket URL**: Direct link for purchasing tickets
 
 ## Installation & Setup
 

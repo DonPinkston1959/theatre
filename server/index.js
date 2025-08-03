@@ -246,6 +246,14 @@ function cleanText(text) {
         time: formatTime(show['StartTime'] || show['starttime'] || show['STARTTIME'] || show['Time'] || show['time'] || show['TIME']),
         description: cleanText(show['Description'] || show['description'] || show['DESCRIPTION']),
         websiteUrl: cleanText((company && company.showWebsite) || show['url'] || show['URL'] || (company && company.website)),
+        ticketUrl: cleanText(
+          show['TicketURL'] ||
+          show['ticketUrl'] ||
+          show['TicketUrl'] ||
+          show['ticketURL'] ||
+          show['Ticket URL'] ||
+          show['ticket url']
+        ),
         venue: cleanText(show['Theatre'] || show['theatre'] || show['THEATRE'] || show['Venue'] || show['venue'] || show['VENUE']),
         price: cleanText(show['Price'] || show['price'] || show['PRICE']),
         signLanguageInterpreting: parseBoolean(show['InterpretativePerformance'] || show['InterpretivePerformance'] || show['interpretativeperformance'] || show['Interpreting'] || show['interpreting'] || show['INTERPRETING'])
@@ -267,7 +275,7 @@ function cleanText(text) {
           name: show['name'],
           NAME: show['NAME']
         });
-      }</action>
+      }
 
       // Validate required fields
       if (event.title && event.theatreName && event.date) {
