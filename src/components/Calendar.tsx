@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid, List, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Grid, List, Eye } from 'lucide-react';
 import { TheatreEvent, CalendarView } from '../types';
 import EventPopup from './EventPopup';
 
@@ -76,7 +76,6 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
     const month = currentDate.getMonth();
     
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     
@@ -183,6 +182,10 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                       event.eventType === 'Play' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
                       event.eventType === 'Comedy' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
                       event.eventType === 'Drama' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                      event.eventType === 'Children' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                      event.eventType === 'Opera' ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' :
+                      event.eventType === 'Dance' ? 'bg-pink-100 text-pink-800 hover:bg-pink-200' :
+                      event.eventType === 'Other' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' :
                       'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
@@ -229,6 +232,10 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                       event.eventType === 'Play' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
                       event.eventType === 'Comedy' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
                       event.eventType === 'Drama' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                      event.eventType === 'Children' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                      event.eventType === 'Opera' ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' :
+                      event.eventType === 'Dance' ? 'bg-pink-100 text-pink-800 hover:bg-pink-200' :
+                      event.eventType === 'Other' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' :
                       'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
@@ -275,6 +282,10 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                     event.eventType === 'Play' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
                     event.eventType === 'Comedy' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
                     event.eventType === 'Drama' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                    event.eventType === 'Children' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                    event.eventType === 'Opera' ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' :
+                    event.eventType === 'Dance' ? 'bg-pink-100 text-pink-800 hover:bg-pink-200' :
+                    event.eventType === 'Other' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' :
                     'bg-gray-100 text-gray-800 hover:bg-gray-200'
                   }`}
                 >
