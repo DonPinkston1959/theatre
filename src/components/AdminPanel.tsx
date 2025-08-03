@@ -171,7 +171,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
                       <li>Name (show title, required)</li>
                       <li>Type (play, performance, musical)</li>
                       <li>Date, StartTime</li>
-                      <li>Theatre, url, Description, Interpreting</li>
+                      <li>Theatre, url, TicketURL, Description, Interpreting</li>
                     </ul>
                   </div>
                 </div>
