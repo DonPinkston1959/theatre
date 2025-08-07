@@ -25,27 +25,25 @@ function App() {
     try {
       setLoading(true);
       
-      // Use static sample data for deployed version
-      const isLocalhost = window.location.hostname === 'localhost';
+      // Try to fetch from API first
+      let eventsData, theatresData;
       
-      if (isLocalhost) {
+      try {
+        // Try localhost first (development)
         const [eventsResponse, theatresResponse] = await Promise.all([
           fetch('http://localhost:3001/api/events'),
           fetch('http://localhost:3001/api/theatres')
         ]);
-
-        if (!eventsResponse.ok || !theatresResponse.ok) {
-          throw new Error('Failed to fetch data');
+        
+        if (eventsResponse.ok && theatresResponse.ok) {
+          eventsData = await eventsResponse.json();
+          theatresData = await theatresResponse.json();
+        } else {
+          throw new Error('Local API not available');
         }
-
-        const eventsData = await eventsResponse.json();
-        const theatresData = await theatresResponse.json();
-
-        setEvents(eventsData);
-        setTheatres(theatresData);
-      } else {
+      } catch (localError) {
         // Static sample data for deployed version
-        const sampleEvents = [
+        eventsData = [
           {
             id: '1',
             title: 'A Christmas Carol',
@@ -107,7 +105,7 @@ function App() {
           }
         ];
         
-        const sampleTheatres = [
+        theatresData = [
           { name: 'Kansas City Repertory Theatre', website: 'https://www.kcrep.org' },
           { name: 'Music Hall Kansas City', website: 'https://www.musichallkc.org' },
           { name: 'The Improv Shop', website: 'https://www.theimprovshop.com' },
@@ -115,10 +113,11 @@ function App() {
           { name: 'Starlight Theatre', website: 'https://www.kcstarlight.com' }
         ];
         
-        setEvents(sampleEvents);
-        setTheatres(sampleTheatres);
+        console.log('Using sample data - backend not available');
       }
       
+      setEvents(eventsData);
+      setTheatres(theatresData);
       setError(null);
     } catch (err) {
       setError('Failed to load events. Please try again later.');

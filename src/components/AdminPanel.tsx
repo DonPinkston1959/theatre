@@ -17,12 +17,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Disable admin panel in deployed version
-    if (window.location.hostname !== 'localhost') {
-      setMessage({ type: 'error', text: 'Admin panel is only available in development mode' });
-      return;
-    }
-    
     try {
       const response = await fetch('http://localhost:3001/api/admin/verify', {
         method: 'POST',
