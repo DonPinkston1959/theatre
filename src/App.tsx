@@ -24,20 +24,101 @@ function App() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [eventsResponse, theatresResponse] = await Promise.all([
-        fetch('http://localhost:3001/api/events'),
-        fetch('http://localhost:3001/api/theatres')
-      ]);
+      
+      // Use static sample data for deployed version
+      const isLocalhost = window.location.hostname === 'localhost';
+      
+      if (isLocalhost) {
+        const [eventsResponse, theatresResponse] = await Promise.all([
+          fetch('http://localhost:3001/api/events'),
+          fetch('http://localhost:3001/api/theatres')
+        ]);
 
-      if (!eventsResponse.ok || !theatresResponse.ok) {
-        throw new Error('Failed to fetch data');
+        if (!eventsResponse.ok || !theatresResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const eventsData = await eventsResponse.json();
+        const theatresData = await theatresResponse.json();
+
+        setEvents(eventsData);
+        setTheatres(theatresData);
+      } else {
+        // Static sample data for deployed version
+        const sampleEvents = [
+          {
+            id: '1',
+            title: 'A Christmas Carol',
+            theatreName: 'Kansas City Repertory Theatre',
+            eventType: 'Play' as const,
+            date: '2025-01-15',
+            time: '19:30',
+            description: 'A heartwarming holiday classic brought to life on stage.',
+            websiteUrl: 'https://www.kcrep.org',
+            venue: 'Spencer Theatre',
+            price: '$25-$65'
+          },
+          {
+            id: '2',
+            title: 'The Lion King',
+            theatreName: 'Music Hall Kansas City',
+            eventType: 'Musical' as const,
+            date: '2025-01-18',
+            time: '20:00',
+            description: 'Disney\'s award-winning musical spectacular.',
+            websiteUrl: 'https://www.musichallkc.org',
+            ticketUrl: 'https://www.tickets.com',
+            price: '$45-$125'
+          },
+          {
+            id: '3',
+            title: 'Comedy Night Live',
+            theatreName: 'The Improv Shop',
+            eventType: 'Comedy' as const,
+            date: '2025-01-20',
+            time: '21:00',
+            description: 'An evening of laughs with local comedians.',
+            websiteUrl: 'https://www.theimprovshop.com',
+            price: '$15-$25'
+          },
+          {
+            id: '4',
+            title: 'Romeo and Juliet',
+            theatreName: 'Heart of America Shakespeare Festival',
+            eventType: 'Drama' as const,
+            date: '2025-01-22',
+            time: '18:00',
+            description: 'Shakespeare\'s timeless tragedy of young love.',
+            websiteUrl: 'https://www.kcshakes.org',
+            price: 'Free',
+            signLanguageInterpreting: true
+          },
+          {
+            id: '5',
+            title: 'Nutcracker Suite',
+            theatreName: 'Starlight Theatre',
+            eventType: 'Dance' as const,
+            date: '2025-01-25',
+            time: '14:00',
+            description: 'Classical ballet performance for the whole family.',
+            websiteUrl: 'https://www.kcstarlight.com',
+            ticketUrl: 'https://www.tickets.com/starlight',
+            price: '$20-$50'
+          }
+        ];
+        
+        const sampleTheatres = [
+          { name: 'Kansas City Repertory Theatre', website: 'https://www.kcrep.org' },
+          { name: 'Music Hall Kansas City', website: 'https://www.musichallkc.org' },
+          { name: 'The Improv Shop', website: 'https://www.theimprovshop.com' },
+          { name: 'Heart of America Shakespeare Festival', website: 'https://www.kcshakes.org' },
+          { name: 'Starlight Theatre', website: 'https://www.kcstarlight.com' }
+        ];
+        
+        setEvents(sampleEvents);
+        setTheatres(sampleTheatres);
       }
-
-      const eventsData = await eventsResponse.json();
-      const theatresData = await theatresResponse.json();
-
-      setEvents(eventsData);
-      setTheatres(theatresData);
+      
       setError(null);
     } catch (err) {
       setError('Failed to load events. Please try again later.');
