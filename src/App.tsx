@@ -25,24 +25,28 @@ function App() {
     try {
       setLoading(true);
       
-      // Try to fetch from API first
       let eventsData, theatresData;
       
       try {
-        // Try localhost first (development)
+        // Determine API base URL
+        const isLocalhost = window.location.hostname === 'localhost';
+        const apiBase = isLocalhost 
+          ? 'http://localhost:3001/api'
+          : '/.netlify/functions';
+        
         const [eventsResponse, theatresResponse] = await Promise.all([
-          fetch('http://localhost:3001/api/events'),
-          fetch('http://localhost:3001/api/theatres')
+          fetch(`${apiBase}/${isLocalhost ? 'events' : 'events'}`),
+          fetch(`${apiBase}/${isLocalhost ? 'theatres' : 'theatres'}`)
         ]);
         
         if (eventsResponse.ok && theatresResponse.ok) {
           eventsData = await eventsResponse.json();
           theatresData = await theatresResponse.json();
         } else {
-          throw new Error('Local API not available');
+          throw new Error('API not available');
         }
       } catch (localError) {
-        // Static sample data for deployed version
+        // Fallback sample data
         eventsData = [
           {
             id: '1',

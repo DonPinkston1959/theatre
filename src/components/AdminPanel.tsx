@@ -18,7 +18,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:3001/api/admin/verify', {
+      // Determine API base URL
+      const isLocalhost = window.location.hostname === 'localhost';
+      const apiUrl = isLocalhost 
+        ? 'http://localhost:3001/api/admin/verify'
+        : '/.netlify/functions/admin-verify';
+        
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +63,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:3001/api/admin/upload', {
+      // Determine API base URL
+      const isLocalhost = window.location.hostname === 'localhost';
+      const apiUrl = isLocalhost 
+        ? 'http://localhost:3001/api/admin/upload'
+        : '/.netlify/functions/admin-upload';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
       });
