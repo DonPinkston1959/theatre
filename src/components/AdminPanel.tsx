@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Lock, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { parseExcelFile } from '../utils/excelParser';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -17,34 +19,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      // Determine API base URL
-      const isLocalhost = window.location.hostname === 'localhost';
-      const apiUrl = isLocalhost 
-        ? 'http://localhost:3001/api/admin/verify'
-        : '/.netlify/functions/admin-verify';
-        
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setIsAuthenticated(true);
-        setMessage({ type: 'success', text: 'Authentication successful!' });
-        setTimeout(() => setMessage(null), 2000);
-      } else {
-        console.warn('Invalid admin password attempt', result);
-        setMessage({ type: 'error', text: 'Invalid password' });
-      }
-    } catch (error) {
-      console.error('Error verifying admin password:', error);
-      setMessage({ type: 'error', text: 'Connection error' });
+    // Simple password check
+    const correctPassword = 'Test123';
+    
+    if (password === correctPassword) {
+      setIsAuthenticated(true);
+      setMessage({ type: 'success', text: 'Authentication successful!' });
+      setTimeout(() => setMessage(null), 2000);
+    } else {
+      setMessage({ type: 'error', text: 'Invalid password' });
     }
   };
 
@@ -60,48 +43,88 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
     setMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // Parse Excel file
+      console.log('Starting Excel file processing...');
+      const parseResult = await parseExcelFile(file);
+      console.log('Excel parsing completed:', parseResult);
 
-      // Determine API base URL
-      const isLocalhost = window.location.hostname === 'localhost';
-      const apiUrl = isLocalhost 
-        ? 'http://localhost:3001/api/admin/upload'
-        : '/.netlify/functions/admin-upload';
+      // Insert theatres first
+      let addedTheatres = 0;
+      if (parseResult.theatres.length > 0) {
+        const { data: insertedTheatres, error: theatreError } = await supabase
+          .from('theatres')
+          .upsert(
+            parseResult.theatres.map(theatre => ({
+              name: theatre.name,
+              website: theatre.website || null,
+              address: theatre.address || null,
+              email: theatre.email || null,
+              phone: theatre.phone || null
+            })),
+            { 
+              onConflict: 'name',
+              ignoreDuplicates: false 
+            }
+          )
+          .select();
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
+        if (theatreError) {
+          console.error('Theatre insertion error:', theatreError);
+          throw theatreError;
+        }
+        addedTheatres = insertedTheatres?.length || 0;
+      }
+
+      // Insert events
+      let addedEvents = 0;
+      if (parseResult.events.length > 0) {
+        const { data: insertedEvents, error: eventsError } = await supabase
+          .from('events')
+          .upsert(
+            parseResult.events.map(event => ({
+              title: event.title,
+              theatre_name: event.theatreName,
+              event_type: event.eventType,
+              date: event.date,
+              time: event.time,
+              description: event.description || null,
+              website_url: event.websiteUrl || null,
+              ticket_url: event.ticketUrl || null,
+              venue: event.venue || null,
+              price: event.price || null,
+              sign_language_interpreting: event.signLanguageInterpreting
+            })),
+            { 
+              onConflict: 'title,theatre_name,date',
+              ignoreDuplicates: false 
+            }
+          )
+          .select();
+
+        if (eventsError) {
+          console.error('Events insertion error:', eventsError);
+          throw eventsError;
+        }
+        addedEvents = insertedEvents?.length || 0;
+      }
+
+      setMessage({
+        type: 'success',
+        text: `Successfully processed ${parseResult.companiesProcessed} companies and ${parseResult.showsProcessed} shows! Added ${addedEvents} events and ${addedTheatres} theatres to the database.`
       });
-
-      if (!response.ok) {
-        console.error('Upload request failed with status', response.status);
-        alert('Upload failed. Server responded with an error.');
-        setMessage({ type: 'error', text: 'Upload failed. Server error.' });
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        setMessage({
-          type: 'success',
-          text: `Successfully processed ${result.companiesProcessed} companies and ${result.totalProcessed} shows! Added ${result.addedEvents} new events and ${result.addedTheatres} new theatres.`
-        });
-        setFile(null);
-        // Reset file input
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-        onDataUpdate();
-      } else {
-        console.warn('Upload failed:', result);
-        alert(result.message || 'Upload failed. Please try again.');
-        setMessage({ type: 'error', text: result.message || 'Upload failed. Please try again.' });
-      }
+      
+      setFile(null);
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+      onDataUpdate();
+      
     } catch (error) {
       console.error('Error during file upload:', error);
-      alert('Upload failed. Please try again.');
-      setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Upload failed. Please try again.' 
+      });
     } finally {
       setUploading(false);
     }

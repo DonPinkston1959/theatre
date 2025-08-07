@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Theater as Theatre, Palette, Settings, Plus } from 'lucide-react';
+import { supabase } from './lib/supabase';
 import Calendar from './components/Calendar';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
@@ -25,106 +26,52 @@ function App() {
     try {
       setLoading(true);
       
-      let eventsData, theatresData;
-      
-      try {
-        // Determine API base URL
-        const isLocalhost = window.location.hostname === 'localhost';
-        const apiBase = isLocalhost 
-          ? 'http://localhost:3001/api'
-          : '/.netlify/functions';
-        
-        const [eventsResponse, theatresResponse] = await Promise.all([
-          fetch(`${apiBase}/${isLocalhost ? 'events' : 'events'}`),
-          fetch(`${apiBase}/${isLocalhost ? 'theatres' : 'theatres'}`)
-        ]);
-        
-        if (eventsResponse.ok && theatresResponse.ok) {
-          eventsData = await eventsResponse.json();
-          theatresData = await theatresResponse.json();
-        } else {
-          throw new Error('API not available');
-        }
-      } catch (localError) {
-        // Fallback sample data
-        eventsData = [
-          {
-            id: '1',
-            title: 'A Christmas Carol',
-            theatreName: 'Kansas City Repertory Theatre',
-            eventType: 'Play' as const,
-            date: '2025-01-15',
-            time: '19:30',
-            description: 'A heartwarming holiday classic brought to life on stage.',
-            websiteUrl: 'https://www.kcrep.org',
-            venue: 'Spencer Theatre',
-            price: '$25-$65'
-          },
-          {
-            id: '2',
-            title: 'The Lion King',
-            theatreName: 'Music Hall Kansas City',
-            eventType: 'Musical' as const,
-            date: '2025-01-18',
-            time: '20:00',
-            description: 'Disney\'s award-winning musical spectacular.',
-            websiteUrl: 'https://www.musichallkc.org',
-            ticketUrl: 'https://www.tickets.com',
-            price: '$45-$125'
-          },
-          {
-            id: '3',
-            title: 'Comedy Night Live',
-            theatreName: 'The Improv Shop',
-            eventType: 'Comedy' as const,
-            date: '2025-01-20',
-            time: '21:00',
-            description: 'An evening of laughs with local comedians.',
-            websiteUrl: 'https://www.theimprovshop.com',
-            price: '$15-$25'
-          },
-          {
-            id: '4',
-            title: 'Romeo and Juliet',
-            theatreName: 'Heart of America Shakespeare Festival',
-            eventType: 'Drama' as const,
-            date: '2025-01-22',
-            time: '18:00',
-            description: 'Shakespeare\'s timeless tragedy of young love.',
-            websiteUrl: 'https://www.kcshakes.org',
-            price: 'Free',
-            signLanguageInterpreting: true
-          },
-          {
-            id: '5',
-            title: 'Nutcracker Suite',
-            theatreName: 'Starlight Theatre',
-            eventType: 'Dance' as const,
-            date: '2025-01-25',
-            time: '14:00',
-            description: 'Classical ballet performance for the whole family.',
-            websiteUrl: 'https://www.kcstarlight.com',
-            ticketUrl: 'https://www.tickets.com/starlight',
-            price: '$20-$50'
-          }
-        ];
-        
-        theatresData = [
-          { name: 'Kansas City Repertory Theatre', website: 'https://www.kcrep.org' },
-          { name: 'Music Hall Kansas City', website: 'https://www.musichallkc.org' },
-          { name: 'The Improv Shop', website: 'https://www.theimprovshop.com' },
-          { name: 'Heart of America Shakespeare Festival', website: 'https://www.kcshakes.org' },
-          { name: 'Starlight Theatre', website: 'https://www.kcstarlight.com' }
-        ];
-        
-        console.log('Using sample data - backend not available');
+      // Fetch events from Supabase
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (eventsError) {
+        throw eventsError;
       }
+
+      // Fetch theatres from Supabase
+      const { data: theatresData, error: theatresError } = await supabase
+        .from('theatres')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (theatresError) {
+        throw theatresError;
+      }
+
+      // Transform Supabase data to match our types
+      const transformedEvents: TheatreEvent[] = eventsData.map(event => ({
+        id: event.id,
+        title: event.title,
+        theatreName: event.theatre_name,
+        eventType: event.event_type,
+        date: event.date,
+        time: event.time,
+        description: event.description || '',
+        websiteUrl: event.website_url || '',
+        ticketUrl: event.ticket_url || undefined,
+        venue: event.venue || undefined,
+        price: event.price || undefined,
+        signLanguageInterpreting: event.sign_language_interpreting
+      }));
+
+      const transformedTheatres: TheatreType[] = theatresData.map(theatre => ({
+        name: theatre.name,
+        website: theatre.website || ''
+      }));
       
-      setEvents(eventsData);
-      setTheatres(theatresData);
+      setEvents(transformedEvents);
+      setTheatres(transformedTheatres);
       setError(null);
     } catch (err) {
-      setError('Failed to load events. Please try again later.');
+      setError('Failed to load events from database. Please try again later.');
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
@@ -197,7 +144,7 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-yellow-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading KC Live Theatre events...</p>
+          <p className="text-gray-600">Loading KC Live Theatre events from database...</p>
         </div>
       </div>
     );
