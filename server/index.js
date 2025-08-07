@@ -34,6 +34,13 @@ const dataFilePath = path.join(__dirname, 'data.json');
 // Helper function to read data
 const readData = () => {
   try {
+    // Check if file exists, create it if it doesn't
+    if (!fs.existsSync(dataFilePath)) {
+      const initialData = { events: [], theatres: [] };
+      fs.writeFileSync(dataFilePath, JSON.stringify(initialData, null, 2));
+      return initialData;
+    }
+    
     const data = fs.readFileSync(dataFilePath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
