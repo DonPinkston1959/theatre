@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Theater as Theatre, Palette, Settings, Plus } from 'lucide-react';
+import { Theater as Theatre, Palette, Settings, Plus, Mail } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import Calendar from './components/Calendar';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
+import ContactForm from './components/ContactForm';
 import { TheatreEvent, Theatre as TheatreType, FilterOptions } from './types';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [theatres, setTheatres] = useState<TheatreType[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<TheatreEvent[]>([]);
   const [filters, setFilters] = useState<FilterOptions>({
+    theatreCompanies: [],
     theatres: [],
     eventTypes: [],
     timeOfDay: 'all',
@@ -18,6 +20,7 @@ function App() {
   });
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,10 +89,17 @@ function App() {
   useEffect(() => {
     let filtered = [...events];
 
+    // Filter by theatre companies
+    if (filters.theatreCompanies.length > 0) {
+      filtered = filtered.filter(event => 
+        filters.theatreCompanies.includes(event.theatreName)
+      );
+    }
+
     // Filter by theatres
     if (filters.theatres.length > 0) {
       filtered = filtered.filter(event => 
-        filters.theatres.includes(event.theatreName)
+        filters.theatres.includes(event.venue || event.theatreName)
       );
     }
 
@@ -188,6 +198,13 @@ function App() {
 
             <div className="flex items-center space-x-2">
               <button
+                onClick={() => setIsContactFormOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                title="Contact Website Manager"
+              >
+                <Mail className="w-5 h-5" />
+              </button>
+              <button
                 onClick={() => setIsAdminPanelOpen(true)}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                 title="Admin Panel"
@@ -217,11 +234,11 @@ function App() {
           <div className="flex-1">
             <div className="mb-4">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Theatre Events Calendar
+                KC Live Theatre Events Calendar
               </h2>
               <p className="text-gray-600">
                 Showing {filteredEvents.length} of {events.length} events
-                {filters.theatres.length > 0 || filters.eventTypes.length > 0 || filters.startDate || filters.endDate || filters.timeOfDay !== 'all' || filters.signLanguageInterpreting
+                {filters.theatreCompanies.length > 0 || filters.theatres.length > 0 || filters.eventTypes.length > 0 || filters.startDate || filters.endDate || filters.timeOfDay !== 'all' || filters.signLanguageInterpreting
                   ? ' (filtered)' 
                   : ''
                 }
@@ -241,6 +258,12 @@ function App() {
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
         onDataUpdate={fetchData}
+      />
+
+      {/* Contact Form */}
+      <ContactForm
+        isOpen={isContactFormOpen}
+        onClose={() => setIsContactFormOpen(false)}
       />
 
       {/* Footer */}

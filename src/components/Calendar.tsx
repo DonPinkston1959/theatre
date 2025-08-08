@@ -185,6 +185,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                       event.eventType === 'Children' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
                       event.eventType === 'Opera' ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' :
                       event.eventType === 'Dance' ? 'bg-pink-100 text-pink-800 hover:bg-pink-200' :
+                      event.eventType === 'Performance' ? 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200' :
                       event.eventType === 'Other' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' :
                       'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
@@ -235,6 +236,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                       event.eventType === 'Children' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
                       event.eventType === 'Opera' ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' :
                       event.eventType === 'Dance' ? 'bg-pink-100 text-pink-800 hover:bg-pink-200' :
+                      event.eventType === 'Performance' ? 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200' :
                       event.eventType === 'Other' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' :
                       'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
@@ -285,6 +287,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                     event.eventType === 'Children' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
                     event.eventType === 'Opera' ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' :
                     event.eventType === 'Dance' ? 'bg-pink-100 text-pink-800 hover:bg-pink-200' :
+                    event.eventType === 'Performance' ? 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200' :
                     event.eventType === 'Other' ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' :
                     'bg-gray-100 text-gray-800 hover:bg-gray-200'
                   }`}

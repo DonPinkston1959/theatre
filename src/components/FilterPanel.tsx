@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, Calendar, Clock, Building, Tag, X, Accessibility } from 'lucide-react';
+import { Filter, Calendar, Clock, Building, Tag, X, Accessibility, Users } from 'lucide-react';
 import { FilterOptions, Theatre } from '../types';
 
 interface FilterPanelProps {
@@ -17,13 +17,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   isOpen,
   onToggle
 }) => {
-  const eventTypes = ['Play', 'Musical', 'Comedy', 'Drama', 'Children', 'Opera', 'Dance', 'Other'];
+  const eventTypes = ['Play', 'Musical', 'Comedy', 'Drama', 'Children', 'Opera', 'Dance', 'Performance', 'Other'];
   const timeOptions = [
     { value: 'all', label: 'All Times' },
     { value: 'morning', label: 'Morning (before 12 PM)' },
     { value: 'afternoon', label: 'Afternoon (12-5 PM)' },
     { value: 'evening', label: 'Evening (after 5 PM)' }
   ];
+
+  const handleTheatreCompanyChange = (theatreCompany: string, checked: boolean) => {
+    const newTheatreCompanies = checked
+      ? [...filters.theatreCompanies, theatreCompany]
+      : filters.theatreCompanies.filter(t => t !== theatreCompany);
+    
+    onFiltersChange({ ...filters, theatreCompanies: newTheatreCompanies });
+  };
 
   const handleTheatreChange = (theatreName: string, checked: boolean) => {
     const newTheatres = checked
@@ -43,6 +51,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const clearFilters = () => {
     onFiltersChange({
+      theatreCompanies: [],
       theatres: [],
       eventTypes: [],
       startDate: undefined,
@@ -53,6 +62,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   };
 
   const activeFilterCount = 
+    filters.theatreCompanies.length + 
     filters.theatres.length + 
     filters.eventTypes.length + 
     (filters.startDate ? 1 : 0) + 
@@ -165,22 +175,66 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               </select>
             </div>
 
+            {/* Event Types */}
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3 flex items-center">
+                <Tag className="w-4 h-4 mr-2" />
+                Event Types
+              </h3>
+              <div className="space-y-2">
+                {eventTypes.map(type => (
+                  <label key={type} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.eventTypes.includes(type)}
+                      onChange={(e) => handleEventTypeChange(type, e.target.checked)}
+                      className="mr-2 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-gray-700">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Theatre Companies */}
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3 flex items-center">
+                <Users className="w-4 h-4 mr-2" />
+                Theatre Companies
+              </h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {Array.from(new Set(theatres.map(t => t.name))).sort().map(company => (
+                  <label key={company} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.theatreCompanies.includes(company)}
+                      onChange={(e) => handleTheatreCompanyChange(company, e.target.checked)}
+                      className="mr-2 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-gray-700">{company}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Theatres */}
             <div>
               <h3 className="font-medium text-gray-900 mb-3 flex items-center">
                 <Building className="w-4 h-4 mr-2" />
-                Theatres
+                Theatre Venues
               </h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {theatres.map(theatre => (
-                  <label key={theatre.name} className="flex items-center">
+                {Array.from(new Set(
+                  theatres.flatMap(t => [t.name, ...(t.address ? [t.address.split(',')[0]] : [])])
+                )).filter(Boolean).sort().map(venue => (
+                  <label key={venue} className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={filters.theatres.includes(theatre.name)}
-                      onChange={(e) => handleTheatreChange(theatre.name, e.target.checked)}
+                      checked={filters.theatres.includes(venue)}
+                      onChange={(e) => handleTheatreChange(venue, e.target.checked)}
                       className="mr-2 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                     />
-                    <span className="text-sm text-gray-700">{theatre.name}</span>
+                    <span className="text-sm text-gray-700">{venue}</span>
                   </label>
                 ))}
               </div>
@@ -202,26 +256,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   />
                   <span className="text-sm text-gray-700">Sign Language Interpreting Available</span>
                 </label>
-              </div>
-            </div>
-            {/* Event Types */}
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-                <Tag className="w-4 h-4 mr-2" />
-                Event Types
-              </h3>
-              <div className="space-y-2">
-                {eventTypes.map(type => (
-                  <label key={type} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.eventTypes.includes(type)}
-                      onChange={(e) => handleEventTypeChange(type, e.target.checked)}
-                      className="mr-2 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                    />
-                    <span className="text-sm text-gray-700">{type}</span>
-                  </label>
-                ))}
               </div>
             </div>
           </div>

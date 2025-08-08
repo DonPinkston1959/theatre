@@ -2,7 +2,7 @@ export interface TheatreEvent {
   id: string;
   title: string;
   theatreName: string;
-  eventType: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Other';
+  eventType: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Performance' | 'Other';
   date: string; // YYYY-MM-DD format
   time: string; // HH:MM format
   description: string;
@@ -20,6 +20,7 @@ export interface Theatre {
 }
 
 export interface FilterOptions {
+  theatreCompanies: string[];
   theatres: string[];
   eventTypes: string[];
   startDate?: string;

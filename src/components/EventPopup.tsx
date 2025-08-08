@@ -42,6 +42,8 @@ const EventPopup: React.FC<EventPopupProps> = ({ event, onClose }) => {
         return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       case 'Dance':
         return 'bg-pink-100 text-pink-800 border-pink-200';
+      case 'Performance':
+        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }

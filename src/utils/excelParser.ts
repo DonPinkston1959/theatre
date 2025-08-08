@@ -20,7 +20,7 @@ function normalizeCompanyName(name: string): string {
 
 // Helper function to validate event types
 function validateEventType(type: string): TheatreEvent['eventType'] {
-  const validTypes: TheatreEvent['eventType'][] = ['Play', 'Musical', 'Comedy', 'Drama', 'Children', 'Opera', 'Dance', 'Other'];
+  const validTypes: TheatreEvent['eventType'][] = ['Play', 'Musical', 'Comedy', 'Drama', 'Children', 'Opera', 'Dance', 'Performance', 'Other'];
   const normalizedType = type ? type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() : 'Other';
   
   // Map common variations
@@ -29,7 +29,6 @@ function validateEventType(type: string): TheatreEvent['eventType'] {
     'theatre': 'Play',
     'theater': 'Play',
     'show': 'Play',
-    'performance': 'Play',
     'concert': 'Musical',
     'kid': 'Children',
     'kids': 'Children',
