@@ -78,10 +78,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       // Insert events
       let addedEvents = 0;
       if (parseResult.events.length > 0) {
+        // Remove duplicates within the batch before inserting
+        const uniqueEvents = parseResult.events.filter((event, index, array) => {
+          return array.findIndex(e => 
+            e.title === event.title && 
+            e.theatreName === event.theatreName && 
+            e.date === event.date
+          ) === index;
+        });
+        
+        console.log(`Filtered ${parseResult.events.length} events down to ${uniqueEvents.length} unique events`);
+
         const { data: insertedEvents, error: eventsError } = await supabase
           .from('events')
           .upsert(
-            parseResult.events.map(event => ({
+            uniqueEvents.map(event => ({
               title: event.title,
               theatre_name: event.theatreName,
               event_type: event.eventType,
@@ -110,7 +121,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
 
       setMessage({
         type: 'success',
-        text: `Successfully processed ${parseResult.companiesProcessed} companies and ${parseResult.showsProcessed} shows! Added ${addedEvents} events and ${addedTheatres} theatres to the database.`
+        text: `Successfully processed ${parseResult.companiesProcessed} companies and ${parseResult.showsProcessed} shows! Added/updated ${addedEvents} events and ${addedTheatres} theatres to the database.`
       });
       
       setFile(null);
