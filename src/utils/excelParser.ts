@@ -154,59 +154,25 @@ export function parseExcelFile(file: File): Promise<ParseResult> {
         
         console.log('Available sheets:', workbook.SheetNames);
         
-        // Find Companies and Shows tabs
-        const companiesSheetName = workbook.SheetNames.find(name => 
-          name.toLowerCase().includes('companies') || name.toLowerCase().includes('company')
-        );
+        // Find Shows tab only - we'll extract all data from here
         const showsSheetName = workbook.SheetNames.find(name => 
           name.toLowerCase().includes('shows') || name.toLowerCase().includes('show')
         );
         
-        if (!companiesSheetName || !showsSheetName) {
-          throw new Error(`Missing required tabs. Found: ${workbook.SheetNames.join(', ')}. Need "Companies" and "Shows" tabs.`);
+        if (!showsSheetName) {
+          throw new Error(`Missing required "Shows" tab. Found: ${workbook.SheetNames.join(', ')}.`);
         }
         
-        console.log(`Processing Companies tab: "${companiesSheetName}"`);
         console.log(`Processing Shows tab: "${showsSheetName}"`);
         
-        // Read both tabs
-        const companiesWorksheet = workbook.Sheets[companiesSheetName];
+        // Read Shows tab only
         const showsWorksheet = workbook.Sheets[showsSheetName];
         
-        const companiesData = XLSX.utils.sheet_to_json(companiesWorksheet);
         const showsData = XLSX.utils.sheet_to_json(showsWorksheet);
         
-        console.log('Companies rows:', companiesData.length);
         console.log('Shows rows:', showsData.length);
         
-        // Process companies first to create theatre lookup
-        console.log('\n=== PROCESSING COMPANIES ===');
-        const companyLookup: Record<string, any> = {};
-        const companyNameMap = new Map<string, string>();
-        
-        companiesData.forEach(company => {
-          const rawCompanyName = (company as any)['Company'] || (company as any)['company'] || (company as any)['COMPANY'];
-          const companyName = cleanText(rawCompanyName);
-          const normalizedName = normalizeCompanyName(companyName);
-          
-          console.log(`Processing company: "${companyName}" (normalized: "${normalizedName}")`);
-          if (companyName) {
-            companyLookup[companyName] = {
-              name: companyName,
-              website: cleanText((company as any)['CompanyWebsite'] || (company as any)['companywebsite'] || (company as any)['COMPANYWEBSITE']),
-              showWebsite: cleanText((company as any)['ShowWebsite (if different)'] || (company as any)['showwebsite (if different)'] || (company as any)['ShowWebsite'] || (company as any)['showwebsite']),
-              email: cleanText((company as any)['Email'] || (company as any)['email'] || (company as any)['EMAIL']),
-              phone: cleanText((company as any)['Phone'] || (company as any)['phone'] || (company as any)['PHONE']),
-              address: cleanText((company as any)['Address'] || (company as any)['address'] || (company as any)['ADDRESS'])
-            };
-            
-            companyNameMap.set(normalizedName, companyName);
-          }
-        });
-        
-        console.log('Created company lookup for:', Object.keys(companyLookup).length, 'companies');
-        
-        // Process shows and link with company data
+        // Process shows only - extract all unique data from Shows worksheet
         console.log('\n=== PROCESSING SHOWS ===');
         const newEvents: Omit<TheatreEvent, 'id'>[] = [];
         const newTheatres = new Map<string, Omit<Theatre, 'website'>>();
@@ -216,26 +182,15 @@ export function parseExcelFile(file: File): Promise<ParseResult> {
           
           const rawCompanyName = (show as any)['Company'] || (show as any)['company'] || (show as any)['COMPANY'];
           const cleanCompanyName = cleanText(rawCompanyName);
-          const normalizedCompanyName = normalizeCompanyName(cleanCompanyName);
-          
-          // Try exact match first, then fuzzy match
-          let company = companyLookup[cleanCompanyName];
-          let finalCompanyName = cleanCompanyName;
-          
-          if (!company && companyNameMap.has(normalizedCompanyName)) {
-            finalCompanyName = companyNameMap.get(normalizedCompanyName)!;
-            company = companyLookup[finalCompanyName];
-            console.log(`Fuzzy matched "${cleanCompanyName}" to "${finalCompanyName}"`);
-          }
           
           const event: Omit<TheatreEvent, 'id'> = {
             title: cleanText((show as any)['Name'] || (show as any)['name'] || (show as any)['NAME'] || (show as any)['Title'] || (show as any)['title']),
-            theatreName: finalCompanyName || '',
+            theatreName: cleanCompanyName || '',
             eventType: validateEventType(cleanText((show as any)['Type'] || (show as any)['type'] || (show as any)['TYPE']) || 'Other'),
             date: formatDate((show as any)['Date'] || (show as any)['date'] || (show as any)['DATE']),
             time: formatTime((show as any)['StartTime'] || (show as any)['starttime'] || (show as any)['STARTTIME'] || (show as any)['Time'] || (show as any)['time'] || (show as any)['TIME']),
             description: cleanText((show as any)['Description'] || (show as any)['description'] || (show as any)['DESCRIPTION']),
-            websiteUrl: cleanText((company && company.showWebsite) || (show as any)['url'] || (show as any)['URL'] || (company && company.website)),
+            websiteUrl: cleanText((show as any)['url'] || (show as any)['URL'] || (show as any)['Website'] || (show as any)['website']),
             ticketUrl: cleanText(
               (show as any)['TicketURL'] ||
               (show as any)['ticketUrl'] ||
@@ -261,16 +216,14 @@ export function parseExcelFile(file: File): Promise<ParseResult> {
             console.log('✅ Valid event added:', event.title);
             newEvents.push(event);
             
-            // Add company as theatre with full details
-            if (company) {
-              newTheatres.set(finalCompanyName, {
-                name: finalCompanyName,
-                website: company.website,
-                address: company.address,
-                email: company.email,
-                phone: company.phone
-              });
-            }
+            // Add company as theatre from Shows data only
+            newTheatres.set(cleanCompanyName, {
+              name: cleanCompanyName,
+              website: event.websiteUrl,
+              address: cleanText((show as any)['Address'] || (show as any)['address'] || (show as any)['ADDRESS']),
+              email: cleanText((show as any)['Email'] || (show as any)['email'] || (show as any)['EMAIL']),
+              phone: cleanText((show as any)['Phone'] || (show as any)['phone'] || (show as any)['PHONE'])
+            });
           } else {
             console.log('❌ Invalid event skipped:', {
               title: event.title,
@@ -285,7 +238,7 @@ export function parseExcelFile(file: File): Promise<ParseResult> {
         resolve({
           events: newEvents,
           theatres: Array.from(newTheatres.values()),
-          companiesProcessed: companiesData.length,
+          companiesProcessed: newTheatres.size,
           showsProcessed: newEvents.length
         });
 

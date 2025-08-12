@@ -107,6 +107,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
             })),
             { 
               onConflict: 'title,theatre_name,date',
+              onConflict: 'title,theatre_name,date,time',
               ignoreDuplicates: false 
             }
           )

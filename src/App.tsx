@@ -218,20 +218,19 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
+        <div className="space-y-6">
           {/* Filter Panel */}
-          <aside className="lg:w-72 flex-shrink-0">
+          <div className="w-full mb-6">
             <FilterPanel
               filters={filters}
               onFiltersChange={setFilters}
               theatres={theatres}
-              isOpen={isFilterPanelOpen}
-              onToggle={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+              events={events}
             />
-          </aside>
+          </div>
 
           {/* Calendar */}
-          <div className="flex-1">
+          <div className="w-full">
             <div className="mb-4">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 KC Live Theatre Events Calendar
