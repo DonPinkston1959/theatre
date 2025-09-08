@@ -9,7 +9,9 @@ interface EventPopupProps {
 
 const EventPopup: React.FC<EventPopupProps> = ({ event, onClose }) => {
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    // Parse date string as UTC to avoid timezone shifts
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
