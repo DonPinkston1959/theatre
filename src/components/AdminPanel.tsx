@@ -201,24 +201,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-medium text-blue-900 mb-2">Expected Excel Format</h3>
                 <div className="text-sm text-blue-800 space-y-1">
-                  <p><strong>Required tabs:</strong> Companies and Shows</p>
+                  <p><strong>Required tab:</strong> "Show" or "Shows"</p>
                   <div className="mt-2">
-                    <p><strong>Companies tab columns:</strong></p>
-                    <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Company (required)</li>
-                      <li>CompanyWebsite</li>
-                      <li>ShowWebsite (if different)</li>
-                      <li>Email, Phone, Address</li>
-                    </ul>
-                  </div>
-                  <div className="mt-2">
-                    <p><strong>Shows tab columns:</strong></p>
-                    <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Company (required)</li>
-                      <li>Name (show title, required)</li>
-                      <li>Type (play, performance, musical)</li>
-                      <li>Date, StartTime</li>
-                      <li>Theatre, url, TicketURL, Description, Interpreting</li>
+                    <p><strong>Required columns in order:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-2 text-xs">
+                      <li><strong>Number</strong> - Row number</li>
+                      <li><strong>Company</strong> - Theatre company name</li>
+                      <li><strong>Theatre</strong> - Venue name</li>
+                      <li><strong>Address</strong> - Venue address</li>
+                      <li><strong>Name</strong> - Show title</li>
+                      <li><strong>Type</strong> - Event type</li>
+                      <li><strong>url</strong> - Website URL</li>
+                      <li><strong>TicketURL</strong> - Ticket purchase URL</li>
+                      <li><strong>Day</strong> - Day of week (optional)</li>
+                      <li><strong>Date</strong> - Event date (YYYY-MM-DD)</li>
+                      <li><strong>StartTime</strong> - Start time (HH:MM:SS)</li>
+                      <li><strong>InterpretivePerformance</strong> - Sign language</li>
+                      <li><strong>Description</strong> - Event description</li>
                     </ul>
                   </div>
                 </div>
@@ -229,7 +228,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
                   <div className="text-yellow-800">
                     <p className="font-medium">Processing your Excel file...</p>
-                    <p className="text-sm">Reading Companies and Shows tabs</p>
+                    <p className="text-sm">Reading Show/Shows tab</p>
                   </div>
                 </div>
               )}
