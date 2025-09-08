@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Theater as Theatre, Palette, Settings, Plus, Mail } from 'lucide-react';
+import { supabase } from './lib/supabase';
 import Calendar from './components/Calendar';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
@@ -28,26 +29,53 @@ function App() {
     try {
       setLoading(true);
       
-      // Fetch events from local Express backend
-      const eventsResponse = await fetch('http://localhost:3001/api/events');
-      if (!eventsResponse.ok) {
-        throw new Error(`Failed to fetch events: ${eventsResponse.statusText}`);
-      }
-      const eventsData = await eventsResponse.json();
+      // Fetch events from Supabase
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
 
-      // Fetch theatres from local Express backend
-      const theatresResponse = await fetch('http://localhost:3001/api/theatres');
-      if (!theatresResponse.ok) {
-        throw new Error(`Failed to fetch theatres: ${theatresResponse.statusText}`);
+      if (eventsError) {
+        throw eventsError;
       }
-      const theatresData = await theatresResponse.json();
 
-      // Data from local backend is already in correct format
-      setEvents(eventsData);
-      setTheatres(theatresData);
+      // Fetch theatres from Supabase
+      const { data: theatresData, error: theatresError } = await supabase
+        .from('theatres')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (theatresError) {
+        throw theatresError;
+      }
+
+      // Transform Supabase data to match frontend types
+      const transformedEvents = (eventsData || []).map(event => ({
+        id: event.id,
+        title: event.title,
+        theatreName: event.theatre_name,
+        eventType: event.event_type,
+        date: event.date,
+        time: event.time,
+        description: event.description || '',
+        websiteUrl: event.website_url || '',
+        ticketUrl: event.ticket_url || undefined,
+        venue: event.venue || undefined,
+        price: event.price || undefined,
+        signLanguageInterpreting: event.sign_language_interpreting || false
+      }));
+
+      const transformedTheatres = (theatresData || []).map(theatre => ({
+        name: theatre.name,
+        website: theatre.website || '',
+        address: theatre.address || undefined
+      }));
+
+      setEvents(transformedEvents);
+      setTheatres(transformedTheatres);
       setError(null);
     } catch (err) {
-      setError('Failed to load events from database. Please try again later.');
+      setError('Failed to load events from Supabase database. Please try again later.');
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
