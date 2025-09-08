@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Theater as Theatre, Palette, Settings, Plus, Mail } from 'lucide-react';
-import { supabase } from './lib/supabase';
 import Calendar from './components/Calendar';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
@@ -29,49 +28,23 @@ function App() {
     try {
       setLoading(true);
       
-      // Fetch events from Supabase
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
-
-      if (eventsError) {
-        throw eventsError;
+      // Fetch events from local Express backend
+      const eventsResponse = await fetch('http://localhost:3001/api/events');
+      if (!eventsResponse.ok) {
+        throw new Error(`Failed to fetch events: ${eventsResponse.statusText}`);
       }
+      const eventsData = await eventsResponse.json();
 
-      // Fetch theatres from Supabase
-      const { data: theatresData, error: theatresError } = await supabase
-        .from('theatres')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (theatresError) {
-        throw theatresError;
+      // Fetch theatres from local Express backend
+      const theatresResponse = await fetch('http://localhost:3001/api/theatres');
+      if (!theatresResponse.ok) {
+        throw new Error(`Failed to fetch theatres: ${theatresResponse.statusText}`);
       }
+      const theatresData = await theatresResponse.json();
 
-      // Transform Supabase data to match our types
-      const transformedEvents: TheatreEvent[] = eventsData.map(event => ({
-        id: event.id,
-        title: event.title,
-        theatreName: event.theatre_name,
-        eventType: event.event_type,
-        date: event.date,
-        time: event.time,
-        description: event.description || '',
-        websiteUrl: event.website_url || '',
-        ticketUrl: event.ticket_url || undefined,
-        venue: event.venue || undefined,
-        price: event.price || undefined,
-        signLanguageInterpreting: event.sign_language_interpreting
-      }));
-
-      const transformedTheatres: TheatreType[] = theatresData.map(theatre => ({
-        name: theatre.name,
-        website: theatre.website || ''
-      }));
-      
-      setEvents(transformedEvents);
-      setTheatres(transformedTheatres);
+      // Data from local backend is already in correct format
+      setEvents(eventsData);
+      setTheatres(theatresData);
       setError(null);
     } catch (err) {
       setError('Failed to load events from database. Please try again later.');
