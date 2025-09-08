@@ -320,7 +320,8 @@ function cleanText(text) {
       return !existingEvents.some(existing => 
         existing.title === newEvent.title &&
         existing.theatreName === newEvent.theatreName &&
-        existing.date === newEvent.date
+        existing.date === newEvent.date &&
+        existing.time === newEvent.time
       );
     });
 
