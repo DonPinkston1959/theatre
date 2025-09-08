@@ -398,41 +398,46 @@ function validateEventType(type) {
 // Helper functions
 function formatDate(dateInput) {
   if (!dateInput) return '';
-  
+
   let date;
   if (typeof dateInput === 'number') {
-    // Excel date serial number
-    // Excel date serial (1900 epoch)
-    const excelEpoch = new Date(1900, 0, 1);
-    date = new Date(excelEpoch.getTime() + (dateInput - 2) * 24 * 60 * 60 * 1000);
+    // Excel stores dates as days since 1899-12-31. Convert using UTC to avoid timezone issues
+    const ms = Math.round((dateInput - 25569) * 86400 * 1000);
+    date = new Date(ms);
   } else if (dateInput instanceof Date) {
-    // Already a Date object
-    date = dateInput;
+    date = new Date(Date.UTC(
+      dateInput.getFullYear(),
+      dateInput.getMonth(),
+      dateInput.getDate()
+    ));
   } else {
     // Try to parse string date
     const dateStr = dateInput.toString().trim();
-    
-    // Handle various date formats
+
     if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-      // MM/DD/YYYY or M/D/YYYY
-      date = new Date(dateStr);
+      const [m, d, y] = dateStr.split('/').map(Number);
+      date = new Date(Date.UTC(y, m - 1, d));
     } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      // YYYY-MM-DD
-      date = new Date(dateStr);
+      const [y, m, d] = dateStr.split('-').map(Number);
+      date = new Date(Date.UTC(y, m - 1, d));
     } else if (dateStr.match(/^\d{1,2}-\d{1,2}-\d{4}$/)) {
-      // MM-DD-YYYY or M-D-YYYY
-      const parts = dateStr.split('-');
-      date = new Date(parts[2], parts[0] - 1, parts[1]);
+      const [m, d, y] = dateStr.split('-').map(Number);
+      date = new Date(Date.UTC(y, m - 1, d));
     } else {
-      date = new Date(dateStr);
+      const parsed = new Date(dateStr);
+      date = new Date(Date.UTC(
+        parsed.getFullYear(),
+        parsed.getMonth(),
+        parsed.getDate()
+      ));
     }
   }
-  
+
   if (isNaN(date.getTime())) {
     console.log('❌ Invalid date:', dateInput);
     return '';
   }
-  
+
   const formatted = date.toISOString().split('T')[0];
   return formatted;
 }
@@ -499,7 +504,7 @@ function parseBoolean(value) {
   return str === 'true' || str === 'yes' || str === '1' || str === 'available' || str === 'offered' || str === 'y';
 }
 
-export { formatTime };
+export { formatTime, formatDate };
 
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
