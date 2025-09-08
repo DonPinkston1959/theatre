@@ -1,6 +1,8 @@
 import * as XLSX from 'xlsx';
 import { TheatreEvent, Theatre } from '../types';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Helper function to clean text fields
 function cleanText(text: any): string {
   if (!text) return '';
@@ -38,26 +40,38 @@ function formatDate(dateInput: any): string {
   
   let date: Date;
   if (typeof dateInput === 'number') {
-    // Excel date serial number
-    const excelEpoch = new Date(1900, 0, 1);
-    date = new Date(excelEpoch.getTime() + (dateInput - 2) * 24 * 60 * 60 * 1000);
+    // Excel stores dates as days since 1899-12-31. Convert to UTC to avoid timezone shifts
+    const ms = Math.round((dateInput - 25569) * 86400 * 1000);
+    date = new Date(ms);
   } else if (dateInput instanceof Date) {
-    date = dateInput;
+    // Normalise to UTC midnight
+    date = new Date(Date.UTC(
+      dateInput.getFullYear(),
+      dateInput.getMonth(),
+      dateInput.getDate()
+    ));
   } else {
     // Try to parse string date
     const dateStr = dateInput.toString().trim();
-    
+
     // Handle various date formats
     if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      // YYYY-MM-DD format (most likely from the new format)
-      date = new Date(dateStr);
+      // YYYY-MM-DD format
+      const [y, m, d] = dateStr.split('-').map(Number);
+      date = new Date(Date.UTC(y, m - 1, d));
     } else if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-      date = new Date(dateStr);
+      const [m, d, y] = dateStr.split('/').map(Number);
+      date = new Date(Date.UTC(y, m - 1, d));
     } else if (dateStr.match(/^\d{1,2}-\d{1,2}-\d{4}$/)) {
-      const parts = dateStr.split('-');
-      date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+      const [m, d, y] = dateStr.split('-').map(Number);
+      date = new Date(Date.UTC(y, m - 1, d));
     } else {
-      date = new Date(dateStr);
+      const parsed = new Date(dateStr);
+      date = new Date(Date.UTC(
+        parsed.getFullYear(),
+        parsed.getMonth(),
+        parsed.getDate()
+      ));
     }
   }
   

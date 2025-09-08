@@ -24,7 +24,9 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
 
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => event.date === dateStr);
+    return events
+      .filter(event => event.date === dateStr)
+      .sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
