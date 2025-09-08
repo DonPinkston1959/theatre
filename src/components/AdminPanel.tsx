@@ -106,7 +106,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
               sign_language_interpreting: event.signLanguageInterpreting
             })),
             { 
-              onConflict: 'title,theatre_name,date',
               onConflict: 'title,theatre_name,date,time',
               ignoreDuplicates: false 
             }
