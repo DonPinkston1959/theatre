@@ -83,7 +83,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
           return array.findIndex(e => 
             e.title === event.title && 
             e.theatreName === event.theatreName && 
-            e.date === event.date
+            e.date === event.date &&
+            e.time === event.time
           ) === index;
         });
         
