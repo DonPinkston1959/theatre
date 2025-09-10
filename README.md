@@ -128,7 +128,7 @@ Events are color-coded by type:
 
 ## Contributing
 
-To add new theatre venues or modify event types, update the corresponding arrays in the FilterPanel component and ensure the backend validation matches.
+To add new theatre venues or modify event types, reach out to Don Pinkston
 
 ## License
 
