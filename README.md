@@ -18,7 +18,7 @@ A comprehensive theatre events website for the Kansas City area, featuring a cal
 - **Multiple Filters**: Apply multiple filters simultaneously
 
 ### Admin Features
-- **Password Protection**: Admin panel secured with password (Test123)
+- **Password Protection**: Admin panel secured with password (JoshRocks28)
 - **Excel Upload**: Upload .xlsx files with event data
 - **Data Persistence**: New uploads update existing data without loss
 - **Error Handling**: Comprehensive error messages and validation
@@ -67,7 +67,7 @@ The Excel file should contain the following columns:
 
 ### Adding Events (Admin)
 1. Click the Settings icon in the top-right corner
-2. Enter the admin password: `Test123`
+2. Enter the admin password: `JoshRocks28`
 3. Upload an Excel file with the proper format
 4. Events will be automatically parsed and added to the calendar
 
@@ -133,3 +133,4 @@ To add new theatre venues or modify event types, reach out to Don Pinkston
 ## License
 
 This project is licensed under the MIT License.
+

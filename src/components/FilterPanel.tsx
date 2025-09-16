@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Filter, Calendar, Tag, Building, Users, Accessibility, ChevronDown, X } from 'lucide-react';
-import { FilterOptions, Theatre, TheatreEvent } from '../types';
+import { FilterOptions, TheatreEvent } from '../types';\r\nimport { filterEventsExcluding } from '../utils/filterEvents';
 
 interface FilterPanelProps {
   filters: FilterOptions;
@@ -18,11 +18,40 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Get unique values from actual events data
-  const uniqueEventTypes = Array.from(new Set(events.map(e => e.eventType))).sort();
-  const uniqueTheatreCompanies = Array.from(new Set(events.map(e => e.theatreName))).sort();
-  const uniqueTheatreVenues = Array.from(new Set(events.map(e => e.venue).filter(Boolean))).sort();
+  const eventsForEventTypeOptions = useMemo(
+    () => filterEventsExcluding(events, filters, 'eventTypes'),
+    [events, filters]
+  );
+  const eventsForCompanyOptions = useMemo(
+    () => filterEventsExcluding(events, filters, 'theatreCompanies'),
+    [events, filters]
+  );
+  const eventsForVenueOptions = useMemo(
+    () => filterEventsExcluding(events, filters, 'theatres'),
+    [events, filters]
+  );
 
+  const uniqueEventTypes = useMemo(() => {
+    const values = new Set(eventsForEventTypeOptions.map(event => event.eventType));
+    filters.eventTypes.forEach(type => values.add(type));
+    return Array.from(values).sort();
+  }, [eventsForEventTypeOptions, filters.eventTypes]);
+
+  const uniqueTheatreCompanies = useMemo(() => {
+    const values = new Set(eventsForCompanyOptions.map(event => event.theatreName));
+    filters.theatreCompanies.forEach(company => values.add(company));
+    return Array.from(values).sort();
+  }, [eventsForCompanyOptions, filters.theatreCompanies]);
+
+  const uniqueTheatreVenues = useMemo(() => {
+    const values = new Set(
+      eventsForVenueOptions
+        .map(event => event.venue || event.theatreName)
+        .filter((name): name is string => Boolean(name))
+    );
+    filters.theatres.forEach(venue => values.add(venue));
+    return Array.from(values).sort();
+  }, [eventsForVenueOptions, filters.theatres]);
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,8 +127,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         >
           {icon}
           <span className="text-sm font-medium">{title}</span>
-          {activeCount && activeCount > 0 && (
-            <span className="bg-red-800 text-white text-xs px-2 py-1 rounded-full">
+          {typeof activeCount === 'number' && activeCount > 0 && (
+            <span className="ml-2 bg-red-800 text-white text-xs px-2 py-1 rounded-full">
               {activeCount}
             </span>
           )}
@@ -251,3 +280,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 export default FilterPanel;
+
+
+

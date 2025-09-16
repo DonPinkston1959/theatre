@@ -20,7 +20,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
     e.preventDefault();
     
     // Simple password check
-    const correctPassword = 'Test123';
+    const correctPassword = 'JoshRocks28';
     
     if (password === correctPassword) {
       setIsAuthenticated(true);

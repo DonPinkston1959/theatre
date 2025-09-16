@@ -100,7 +100,7 @@ app.get('/api/theatres', (req, res) => {
 // Admin password verification
 app.post('/api/admin/verify', (req, res) => {
   const { password } = req.body;
-  const correctPassword = 'Test123';
+  const correctPassword = 'JoshRocks28';
   
   if (password === correctPassword) {
     res.json({ success: true, message: 'Password verified' });

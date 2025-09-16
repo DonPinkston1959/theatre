@@ -24,7 +24,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ isOpen, onClose }) => {
       // Create mailto link as fallback
       const subject = 'KC Live Theatre - Website Contact';
       const body = `Name: ${formData.name}\nEmail: ${formData.email}\n\nComments:\n${formData.comments}`;
-      const mailtoLink = `mailto:jcornett5@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const mailtoLink = `mailto:don.pinkston.jr@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       
       // Try to use a form service (you can replace this with your preferred service)
       // For now, we'll use a mailto link as a fallback
@@ -46,7 +46,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ isOpen, onClose }) => {
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: 'There was an issue opening your email client. Please email jcornett5@gmail.com directly.' 
+        text: 'There was an issue opening your email client. Please email don.pinkston.jr@gmail.com directly.' 
       });
     } finally {
       setSending(false);
@@ -91,7 +91,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ isOpen, onClose }) => {
               <strong>Send me your Suggestions for Additions or Revisions</strong>
             </p>
             <p className="text-blue-700 text-xs mt-1">
-              Your message will be sent to jcornett5@gmail.com
+              Your message will be sent to don.pinkston.jr@gmail.com
             </p>
           </div>
 

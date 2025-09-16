@@ -6,11 +6,13 @@ import EventPopup from './EventPopup';
 interface CalendarProps {
   events: TheatreEvent[];
   onEventClick: (event: TheatreEvent) => void;
+  view: CalendarView['type'];
+  onViewChange: (view: CalendarView['type']) => void;
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarView['type']>('month');
+const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, view, onViewChange, currentDate, onDateChange }) => {
   const [selectedEvent, setSelectedEvent] = useState<TheatreEvent | null>(null);
 
   const today = new Date();
@@ -30,33 +32,21 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1);
-      } else {
-        newDate.setMonth(prev.getMonth() + 1);
-      }
-      return newDate;
-    });
+    const newDate = new Date(currentDate);
+    newDate.setMonth(currentDate.getMonth() + (direction === 'prev' ? -1 : 1));
+    onDateChange(newDate);
   };
 
   const navigateWeek = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      const days = direction === 'prev' ? -7 : 7;
-      newDate.setDate(prev.getDate() + days);
-      return newDate;
-    });
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() + (direction === 'prev' ? -7 : 7));
+    onDateChange(newDate);
   };
 
   const navigateDay = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      const days = direction === 'prev' ? -1 : 1;
-      newDate.setDate(prev.getDate() + days);
-      return newDate;
-    });
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() + (direction === 'prev' ? -1 : 1));
+    onDateChange(newDate);
   };
 
   const handleNavigation = (direction: 'prev' | 'next') => {
@@ -140,6 +130,12 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
     onEventClick(event);
   };
 
+  const handleDayDrilldown = (day: Date, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDateChange(new Date(day));
+    onViewChange('day');
+  };
+
   const formatTime = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':');
     const hour = parseInt(hours);
@@ -197,9 +193,13 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
-                  <div className="text-xs text-gray-500 text-center">
+                  <button
+                    type=\"button\"
+                    onClick={(e) => handleDayDrilldown(day, e)}
+                    className=\"w-full text-xs text-blue-600 text-center hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm\"
+                  >
                     +{dayEvents.length - 3} more
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -341,7 +341,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
         
         <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
           <button
-            onClick={() => setView('month')}
+            onClick={() => onViewChange('month')}
             className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 ${
               view === 'month' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -350,7 +350,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
             Month
           </button>
           <button
-            onClick={() => setView('week')}
+            onClick={() => onViewChange('week')}
             className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 ${
               view === 'week' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -359,7 +359,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
             Week
           </button>
           <button
-            onClick={() => setView('day')}
+            onClick={() => onViewChange('day')}
             className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 ${
               view === 'day' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -389,3 +389,12 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
 };
 
 export default Calendar;
+
+
+
+
+
+
+
+
+
