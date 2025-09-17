@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Theater as Theatre, Settings, Mail } from 'lucide-react';
-import { supabase } from './lib/supabase';\r\nimport type { Database } from './lib/supabase';
-import Calendar from './components/Calendar';\r\nimport EventList from './components/EventList';\r\nimport { filterEvents } from './utils/filterEvents';
+import { supabase } from './lib/supabase';
+import type { Database } from './lib/supabase';
+import Calendar from './components/Calendar';
+import EventList from './components/EventList';
+import { filterEvents } from './utils/filterEvents';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
 import ContactForm from './components/ContactForm';
