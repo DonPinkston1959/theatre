@@ -23,6 +23,7 @@ function App() {
   const [displayMode, setDisplayMode] = useState<'calendar' | 'list'>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView['type']>('month');
   const [calendarDate, setCalendarDate] = useState(() => new Date());
+  const [lastNonDayView, setLastNonDayView] = useState<CalendarView['type']>('month');
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
