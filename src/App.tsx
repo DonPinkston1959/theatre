@@ -127,11 +127,8 @@ function App() {
     const { startDate, endDate } = filters;
 
     if (!startDate && !endDate) {
-      const today = new Date();
-      setCalendarDate(today);
-      if (calendarView === 'day' && lastNonDayView !== 'day') {
-        setCalendarView(lastNonDayView);
-      }
+      // No date filters active - don't force any view changes
+      // Let user maintain their selected view
       return;
     }
 
@@ -139,7 +136,9 @@ function App() {
       const target = toDate(startDate);
       if (target) {
         setCalendarDate(target);
-        if (calendarView !== 'day') {
+        // Single date selected - suggest day view but don't force it
+        // Only auto-switch if currently in month/week view
+        if (calendarView === 'month' || calendarView === 'week') {
           setLastNonDayView(calendarView);
           setCalendarView('day');
         }
@@ -150,7 +149,9 @@ function App() {
     const reference = toDate(startDate ?? endDate);
     if (reference) {
       setCalendarDate(reference);
-      if (calendarView === 'day' && lastNonDayView !== 'day') {
+      // Date range selected - suggest broader view but don't force it
+      // Only auto-switch if currently in day view and we have a range
+      if (calendarView === 'day' && startDate && endDate && startDate !== endDate) {
         setCalendarView(lastNonDayView);
       }
     }
