@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Filter, Calendar, Tag, Building, Users, Accessibility, ChevronDown, X } from 'lucide-react';
-import { FilterOptions, TheatreEvent } from '../types';\r\nimport { filterEventsExcluding } from '../utils/filterEvents';
+import { FilterOptions, TheatreEvent } from '../types';
+import { filterEventsExcluding } from '../utils/filterEvents';
 
 interface FilterPanelProps {
   filters: FilterOptions;
@@ -280,6 +281,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 export default FilterPanel;
+
 
 
 
