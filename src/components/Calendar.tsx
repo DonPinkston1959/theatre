@@ -194,9 +194,9 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, view, onViewC
                 ))}
                 {dayEvents.length > 3 && (
                   <button
-                    type=\"button\"
+                    type="button"
                     onClick={(e) => handleDayDrilldown(day, e)}
-                    className=\"w-full text-xs text-blue-600 text-center hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm\"
+                    className="w-full text-xs text-blue-600 text-center hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm"
                   >
                     +{dayEvents.length - 3} more
                   </button>
@@ -389,6 +389,8 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, view, onViewC
 };
 
 export default Calendar;
+
+
 
 
 
