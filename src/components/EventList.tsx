@@ -1,130 +1,127 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
+import { Calendar, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { TheatreEvent } from '../types';
+import EventPopup from './EventPopup';
 
 interface EventListProps {
   events: TheatreEvent[];
 }
 
-const truncate = (value: string, maxLength: number) => {
-  if (!value) {
-    return '';
-  }
-  if (value.length <= maxLength) {
-    return value;
-  }
-  return `${value.slice(0, maxLength).trimEnd()}…`;
-};
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) {
-    return '';
-  }
-  const [year, month, day] = dateStr.split('-').map(Number);
-  if (!year || !month || !day) {
-    return dateStr;
-  }
-  const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-};
-
-const formatTime = (timeStr: string) => {
-  if (!timeStr) {
-    return '';
-  }
-  const [hours = '00', minutes = '00'] = timeStr.split(':');
-  const hour = parseInt(hours, 10);
-  if (Number.isNaN(hour)) {
-    return timeStr;
-  }
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour % 12 || 12;
-  return `${displayHour}:${minutes} ${period}`;
-};
-
 const EventList: React.FC<EventListProps> = ({ events }) => {
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
-      if (a.date === b.date) {
-        return a.time.localeCompare(b.time);
-      }
-      return a.date.localeCompare(b.date);
-    });
-  }, [events]);
+  const [selectedEvent, setSelectedEvent] = useState<TheatreEvent | null>(null);
 
-  if (sortedEvents.length === 0) {
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  if (events.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Performance List</h3>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+        <div className="text-gray-400 mb-4">
+          <Calendar className="w-16 h-16 mx-auto" />
         </div>
-        <div className="px-4 py-12 text-center text-gray-500">
-          No events found for the selected filters.
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Events Found</h3>
+        <p className="text-gray-600">Try adjusting your filters to see more events.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h3 className="text-lg font-semibold text-gray-900">Performance List</h3>
-        <span className="text-sm text-gray-500">{sortedEvents.length} events</span>
-      </div>
-      <div
-        className="max-h-[600px] overflow-y-auto focus:outline-none"
-        tabIndex={0}
-        aria-label="Performance list"
-      >
-        <div className="grid grid-cols-12 gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 sticky top-0">
-          <div className="col-span-3">Show</div>
-          <div className="col-span-3">Company</div>
-          <div className="col-span-3">Theatre</div>
-          <div className="col-span-2">Date</div>
-          <div className="col-span-1">Start</div>
-        </div>
-        {sortedEvents.map(event => {
-          const companyText = truncate(event.theatreName, 25);
-          const venueText = truncate(event.venue || event.theatreName, 25);
-          return (
+    <>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="divide-y divide-gray-200">
+          {events.map((event) => (
             <div
               key={event.id}
-              className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 text-sm text-gray-800 items-center hover:bg-gray-50 focus-within:bg-gray-50"
+              onClick={() => setSelectedEvent(event)}
+              className="p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
             >
-              <div className="col-span-3 font-medium whitespace-nowrap" title={event.title}>
-                {truncate(event.title, 25)}
-              </div>
-              <div className="col-span-3 whitespace-nowrap" title={event.theatreName}>
-                {event.websiteUrl ? (
-                  <a
-                    href={event.websiteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {companyText}
-                  </a>
-                ) : (
-                  <span>{companyText}</span>
-                )}
-              </div>
-              <div className="col-span-3 whitespace-nowrap" title={event.venue || event.theatreName}>
-                {venueText}
-              </div>
-              <div className="col-span-2 whitespace-nowrap">
-                {formatDate(event.date)}
-              </div>
-              <div className="col-span-1 whitespace-nowrap font-medium">
-                {formatTime(event.time)}
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 pt-1">
+                      <div className="w-12 h-12 bg-red-800 rounded-lg flex flex-col items-center justify-center text-white">
+                        <span className="text-xs font-medium uppercase">
+                          {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
+                        </span>
+                        <span className="text-lg font-bold leading-none">
+                          {new Date(event.date).getDate()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
+                        {event.title}
+                      </h3>
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600 font-medium">
+                          {event.theatreName}
+                        </p>
+                        {event.venue && event.venue !== event.theatreName && (
+                          <div className="flex items-center text-sm text-gray-500">
+                            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{event.venue}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            {formatDate(event.date)}
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {formatTime(event.time)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {event.description && (
+                    <p className="mt-3 text-sm text-gray-600 line-clamp-2">
+                      {event.description}
+                    </p>
+                  )}
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      {event.eventType}
+                    </span>
+                    {event.signLanguageInterpreting && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        ASL Available
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-shrink-0 ml-4">
+                  <ExternalLink className="w-5 h-5 text-gray-400" />
+                </div>
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {selectedEvent && (
+        <EventPopup
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
+    </>
   );
 };
 

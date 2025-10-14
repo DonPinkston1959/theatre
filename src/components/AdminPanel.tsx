@@ -48,6 +48,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       const parseResult = await parseExcelFile(file);
       console.log('Excel parsing completed:', parseResult);
 
+      // Delete all existing events first
+      console.log('Clearing existing events...');
+      const { error: deleteError } = await supabase
+        .from('events')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+      if (deleteError) {
+        console.error('Error clearing existing events:', deleteError);
+        throw deleteError;
+      }
+
       // Insert theatres first
       let addedTheatres = 0;
       if (parseResult.theatres.length > 0) {
@@ -61,9 +73,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
               email: theatre.email || null,
               phone: theatre.phone || null
             })),
-            { 
+            {
               onConflict: 'name',
-              ignoreDuplicates: false 
+              ignoreDuplicates: false
             }
           )
           .select();
@@ -80,19 +92,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       if (parseResult.events.length > 0) {
         // Remove duplicates within the batch before inserting
         const uniqueEvents = parseResult.events.filter((event, index, array) => {
-          return array.findIndex(e => 
-            e.title === event.title && 
-            e.theatreName === event.theatreName && 
+          return array.findIndex(e =>
+            e.title === event.title &&
+            e.theatreName === event.theatreName &&
             e.date === event.date &&
             e.time === event.time
           ) === index;
         });
-        
+
         console.log(`Filtered ${parseResult.events.length} events down to ${uniqueEvents.length} unique events`);
 
         const { data: insertedEvents, error: eventsError } = await supabase
           .from('events')
-          .upsert(
+          .insert(
             uniqueEvents.map(event => ({
               title: event.title,
               theatre_name: event.theatreName,
@@ -105,11 +117,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
               venue: event.venue || null,
               price: event.price || null,
               sign_language_interpreting: event.signLanguageInterpreting
-            })),
-            { 
-              onConflict: 'title,theatre_name,date,time',
-              ignoreDuplicates: false 
-            }
+            }))
           )
           .select();
 
