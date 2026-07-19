@@ -17,7 +17,7 @@ export type Database = {
           id: string;
           title: string;
           theatre_name: string;
-          event_type: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Other';
+          event_type: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Performance' | 'Other';
           date: string;
           time: string;
           description: string | null;
@@ -33,7 +33,7 @@ export type Database = {
           id?: string;
           title: string;
           theatre_name: string;
-          event_type: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Other';
+          event_type: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Performance' | 'Other';
           date: string;
           time: string;
           description?: string | null;
@@ -49,7 +49,7 @@ export type Database = {
           id?: string;
           title?: string;
           theatre_name?: string;
-          event_type?: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Other';
+          event_type?: 'Play' | 'Musical' | 'Comedy' | 'Drama' | 'Children' | 'Opera' | 'Dance' | 'Performance' | 'Other';
           date?: string;
           time?: string;
           description?: string | null;

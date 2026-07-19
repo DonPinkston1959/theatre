@@ -1,6 +1,6 @@
 import { FilterOptions, TheatreEvent } from '../types';
 
-type FilterDimension = 'theatreCompanies' | 'theatres' | 'eventTypes';
+type FilterDimension = 'theatreCompanies' | 'theatres' | 'eventTypes' | 'organizationTypes';
 
 const matchesTimeOfDay = (time: string, preference?: FilterOptions['timeOfDay']) => {
   if (!preference || preference === 'all') {
@@ -44,6 +44,11 @@ export const filterEvents = (events: TheatreEvent[], filters: FilterOptions) => 
     filtered = filtered.filter(event => selected.has(event.eventType));
   }
 
+  if (filters.organizationTypes && filters.organizationTypes.length > 0) {
+    const selected = new Set(filters.organizationTypes);
+    filtered = filtered.filter(event => selected.has(event.organizationType));
+  }
+
   if (filters.startDate) {
     filtered = filtered.filter(event => event.date >= filters.startDate!);
   }
@@ -72,7 +77,8 @@ export const filterEventsExcluding = (
     ...filters,
     theatreCompanies: exclusions.includes('theatreCompanies') ? [] : [...filters.theatreCompanies],
     theatres: exclusions.includes('theatres') ? [] : [...filters.theatres],
-    eventTypes: exclusions.includes('eventTypes') ? [] : [...filters.eventTypes]
+    eventTypes: exclusions.includes('eventTypes') ? [] : [...filters.eventTypes],
+    organizationTypes: exclusions.includes('organizationTypes') ? [] : [...filters.organizationTypes]
   };
 
   return filterEvents(events, adjustedFilters);

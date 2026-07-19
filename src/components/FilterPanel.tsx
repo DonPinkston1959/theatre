@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Filter, Calendar, Tag, Building, Users, Accessibility, ChevronDown, X } from 'lucide-react';
-import { FilterOptions, TheatreEvent } from '../types';
+import { Calendar, Tag, Building, Users, Accessibility, ChevronDown, X, GraduationCap } from 'lucide-react';
+import { FilterOptions, OrganizationType, TheatreEvent } from '../types';
 import { filterEventsExcluding } from '../utils/filterEvents';
 
 interface FilterPanelProps {
   filters: FilterOptions;
   onFiltersChange: (filters: FilterOptions) => void;
-  theatres: Theatre[];
   events: TheatreEvent[];
 }
+
+const organizationTypes: OrganizationType[] = ['High School', 'Community', 'Professional / Other'];
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
   filters,
   onFiltersChange,
-  theatres,
   events
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -31,9 +31,20 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     () => filterEventsExcluding(events, filters, 'theatres'),
     [events, filters]
   );
+  const eventsForOrganizationOptions = useMemo(
+    () => filterEventsExcluding(events, filters, 'organizationTypes'),
+    [events, filters]
+  );
+
+  const organizationCounts = useMemo(() => new Map(
+    organizationTypes.map(type => [
+      type,
+      eventsForOrganizationOptions.filter(event => event.organizationType === type).length
+    ])
+  ), [eventsForOrganizationOptions]);
 
   const uniqueEventTypes = useMemo(() => {
-    const values = new Set(eventsForEventTypeOptions.map(event => event.eventType));
+    const values = new Set<string>(eventsForEventTypeOptions.map(event => event.eventType));
     filters.eventTypes.forEach(type => values.add(type));
     return Array.from(values).sort();
   }, [eventsForEventTypeOptions, filters.eventTypes]);
@@ -94,6 +105,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       theatreCompanies: [],
       theatres: [],
       eventTypes: [],
+      organizationTypes: [],
       startDate: undefined,
       endDate: undefined,
       timeOfDay: 'all',
@@ -105,6 +117,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     filters.theatreCompanies.length + 
     filters.theatres.length + 
     filters.eventTypes.length + 
+    filters.organizationTypes.length +
     (filters.startDate ? 1 : 0) + 
     (filters.endDate ? 1 : 0) + 
     (filters.signLanguageInterpreting ? 1 : 0);
@@ -149,6 +162,35 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   return (
     <div ref={dropdownRef} className="bg-white rounded-lg shadow-lg p-4 mb-6">
+      <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-gray-100 pb-4">
+        <span className="mr-1 flex items-center text-sm font-medium text-gray-700">
+          <GraduationCap className="mr-1 h-4 w-4" />
+          Quick audience filters:
+        </span>
+        {organizationTypes.map(type => {
+          const isSelected = filters.organizationTypes.includes(type);
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => onFiltersChange({
+                ...filters,
+                organizationTypes: isSelected
+                  ? filters.organizationTypes.filter(item => item !== type)
+                  : [...filters.organizationTypes, type]
+              })}
+              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                isSelected
+                  ? 'border-red-800 bg-red-800 text-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+              aria-pressed={isSelected}
+            >
+              {type} ({organizationCounts.get(type) || 0})
+            </button>
+          );
+        })}
+      </div>
       <div className="flex flex-wrap gap-4 items-center">
         {/* Date Range Filter */}
         <FilterDropdown
@@ -281,7 +323,4 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 export default FilterPanel;
-
-
-
 

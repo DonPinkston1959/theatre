@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { TheatreEvent } from '../types';
 import EventPopup from './EventPopup';
+import { parseLocalDate } from '../utils/date';
 
 interface EventListProps {
   events: TheatreEvent[];
@@ -11,7 +12,7 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
   const [selectedEvent, setSelectedEvent] = useState<TheatreEvent | null>(null);
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -56,10 +57,10 @@ const EventList: React.FC<EventListProps> = ({ events }) => {
                     <div className="flex-shrink-0 pt-1">
                       <div className="w-12 h-12 bg-red-800 rounded-lg flex flex-col items-center justify-center text-white">
                         <span className="text-xs font-medium uppercase">
-                          {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
+                          {parseLocalDate(event.date).toLocaleDateString('en-US', { month: 'short' })}
                         </span>
                         <span className="text-lg font-bold leading-none">
-                          {new Date(event.date).getDate()}
+                          {parseLocalDate(event.date).getDate()}
                         </span>
                       </div>
                     </div>
