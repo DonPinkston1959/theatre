@@ -43,7 +43,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ isOpen, onClose }) => {
         onClose();
       }, 3000);
       
-    } catch (error) {
+    } catch {
       setMessage({ 
         type: 'error', 
         text: 'There was an issue opening your email client. Please email don.pinkston.jr@gmail.com directly.' 
@@ -80,6 +80,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ isOpen, onClose }) => {
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            aria-label="Close contact form"
           >
             <X className="w-5 h-5" />
           </button>

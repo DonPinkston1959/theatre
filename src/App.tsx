@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Theater as Theatre, Settings, Mail } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Theater as Theatre, Settings, Mail, PlusCircle } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import type { Database } from './lib/supabase';
 import Calendar from './components/Calendar';
@@ -8,7 +8,11 @@ import { filterEvents } from './utils/filterEvents';
 import FilterPanel from './components/FilterPanel';
 import AdminPanel from './components/AdminPanel';
 import ContactForm from './components/ContactForm';
+import SubmissionForm from './components/SubmissionForm';
 import { TheatreEvent, FilterOptions, CalendarView } from './types';
+import { parseLocalDate, toKansasCityDateString } from './utils/date';
+import { classifyOrganization } from './utils/organizationType';
+import { recordDailyVisit } from './utils/activity';
 
 function App() {
   const [events, setEvents] = useState<TheatreEvent[]>([]);
@@ -17,6 +21,7 @@ function App() {
     theatreCompanies: [],
     theatres: [],
     eventTypes: [],
+    organizationTypes: [],
     timeOfDay: 'all',
     signLanguageInterpreting: undefined
   });
@@ -26,6 +31,7 @@ function App() {
   const [lastNonDayView, setLastNonDayView] = useState<CalendarView['type']>('month');
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [isSubmissionFormOpen, setIsSubmissionFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +43,17 @@ function App() {
       const pageSize = 1000;
       let from = 0;
       const allEvents: Database['public']['Tables']['events']['Row'][] = [];
+      const { data: theatreRows, error: theatreError } = await supabase
+        .from('theatres')
+        .select('name, address');
+
+      if (theatreError) {
+        throw theatreError;
+      }
+
+      const theatreAddresses = new Map(
+        (theatreRows || []).map(theatre => [theatre.name.trim().toLowerCase(), theatre.address || undefined])
+      );
 
       while (true) {
         const { data, error } = await supabase
@@ -61,7 +78,12 @@ function App() {
         from += pageSize;
       }
 
-      const transformedEvents = allEvents.map(event => ({
+      const transformedEvents = allEvents.map(event => {
+        const venueName = event.venue || event.theatre_name;
+        const venueAddress = theatreAddresses.get(venueName.trim().toLowerCase())
+          || theatreAddresses.get(event.theatre_name.trim().toLowerCase());
+
+        return {
         id: event.id,
         title: event.title,
         theatreName: event.theatre_name,
@@ -72,9 +94,12 @@ function App() {
         websiteUrl: event.website_url || '',
         ticketUrl: event.ticket_url || undefined,
         venue: event.venue || undefined,
+        venueAddress,
         price: event.price || undefined,
-        signLanguageInterpreting: event.sign_language_interpreting || false
-      }));
+        signLanguageInterpreting: event.sign_language_interpreting || false,
+        organizationType: classifyOrganization(event.theatre_name)
+        };
+      });
 
       setEvents(transformedEvents);
       setError(null);
@@ -88,13 +113,19 @@ function App() {
 
   useEffect(() => {
     fetchData();
+    void recordDailyVisit();
   }, []);
 
-  // Apply filters
+  const upcomingEvents = useMemo(() => {
+    const today = toKansasCityDateString(new Date());
+    return events.filter(event => event.date >= today);
+  }, [events]);
+
+  // Past performances stay available to the upload preview but never appear publicly.
   useEffect(() => {
-    const filtered = filterEvents(events, filters);
+    const filtered = filterEvents(upcomingEvents, filters);
     setFilteredEvents(filtered);
-  }, [events, filters]);
+  }, [upcomingEvents, filters]);
 
   const sortedFilteredEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
@@ -112,19 +143,9 @@ function App() {
     setCalendarView(nextView);
   };
 
-  useEffect(() => {
-    const toDate = (value?: string) => {
-      if (!value) {
-        return null;
-      }
-      const [year, month, day] = value.split('-').map(Number);
-      if (!year || !month || !day) {
-        return null;
-      }
-      return new Date(year, month - 1, day);
-    };
+  const { startDate, endDate } = filters;
 
-    const { startDate, endDate } = filters;
+  useEffect(() => {
 
     if (!startDate && !endDate) {
       // No date filters active - don't force any view changes
@@ -133,8 +154,8 @@ function App() {
     }
 
     if (startDate && (!endDate || endDate === startDate)) {
-      const target = toDate(startDate);
-      if (target) {
+      const target = parseLocalDate(startDate);
+      if (!Number.isNaN(target.getTime())) {
         setCalendarDate(target);
         // Single date selected - suggest day view but don't force it
         // Only auto-switch if currently in month/week view
@@ -146,8 +167,8 @@ function App() {
       return;
     }
 
-    const reference = toDate(startDate ?? endDate);
-    if (reference) {
+    const reference = parseLocalDate(startDate ?? endDate ?? '');
+    if (!Number.isNaN(reference.getTime())) {
       setCalendarDate(reference);
       // Date range selected - suggest broader view but don't force it
       // Only auto-switch if currently in day view and we have a range
@@ -155,7 +176,7 @@ function App() {
         setCalendarView(lastNonDayView);
       }
     }
-  }, [filters.startDate, filters.endDate, calendarView, lastNonDayView]);
+  }, [startDate, endDate, calendarView, lastNonDayView]);
 
   const handleEventClick = (event: TheatreEvent) => {
     // Event click handling is managed by the EventPopup component
@@ -211,6 +232,14 @@ function App() {
 
             <div className="flex items-center space-x-2">
               <button
+                onClick={() => setIsSubmissionFormOpen(true)}
+                className="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
+                title="Submit a Show"
+              >
+                <PlusCircle className="h-5 w-5 sm:mr-2" />
+                <span className="hidden sm:inline">Submit a Show</span>
+              </button>
+              <button
                 onClick={() => setIsContactFormOpen(true)}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                 title="Contact Website Manager"
@@ -237,7 +266,7 @@ function App() {
             <FilterPanel
               filters={filters}
               onFiltersChange={setFilters}
-              events={events}
+              events={upcomingEvents}
             />
           </div>
 
@@ -249,8 +278,8 @@ function App() {
                   KC Live Theatre and Fine Arts Event Calendar
                 </h2>
                 <p className="text-gray-600">
-                  Showing {sortedFilteredEvents.length} of {events.length} events
-                  {filters.theatreCompanies.length > 0 || filters.theatres.length > 0 || filters.eventTypes.length > 0 || filters.startDate || filters.endDate || filters.timeOfDay !== 'all' || filters.signLanguageInterpreting
+                  Showing {sortedFilteredEvents.length} of {upcomingEvents.length} upcoming events
+                  {filters.theatreCompanies.length > 0 || filters.theatres.length > 0 || filters.eventTypes.length > 0 || filters.organizationTypes.length > 0 || filters.startDate || filters.endDate || filters.timeOfDay !== 'all' || filters.signLanguageInterpreting
                     ? ' (filtered)' 
                     : ''
                   }
@@ -301,12 +330,18 @@ function App() {
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
         onDataUpdate={fetchData}
+        events={events}
       />
 
       {/* Contact Form */}
       <ContactForm
         isOpen={isContactFormOpen}
         onClose={() => setIsContactFormOpen(false)}
+      />
+
+      <SubmissionForm
+        isOpen={isSubmissionFormOpen}
+        onClose={() => setIsSubmissionFormOpen(false)}
       />
 
       {/* Footer */}
@@ -317,7 +352,7 @@ function App() {
               © 2025 KC Live Theatre. Discover the best of Kansas City's theatre scene.
             </p>
             <p className="text-sm">
-              For theatre submissions or inquiries, contact your local venues directly.
+              Know about a production we missed? Use “Submit a Show” above to send it to Don for review.
             </p>
           </div>
         </div>
@@ -327,10 +362,6 @@ function App() {
 }
 
 export default App;
-
-
-
-
 
 
 

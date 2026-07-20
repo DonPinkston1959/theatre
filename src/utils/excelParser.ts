@@ -137,9 +137,11 @@ function parseBoolean(value: any): boolean {
   return str === 'true' || str === 'yes' || str === '1' || str === 'available' || str === 'offered' || str === 'y';
 }
 
+export type ParsedTheatreEvent = Omit<TheatreEvent, 'id' | 'venueAddress' | 'organizationType'>;
+
 export interface ParseResult {
-  events: Omit<TheatreEvent, 'id'>[];
-  theatres: Omit<Theatre, 'website'>[];
+  events: ParsedTheatreEvent[];
+  theatres: Theatre[];
   companiesProcessed: number;
   showsProcessed: number;
 }
@@ -174,14 +176,14 @@ export function parseExcelFile(file: File): Promise<ParseResult> {
         
         if (showsData.length > 0) {
           console.log('\n=== SHOWS TAB COLUMNS ===');
-          console.log('Available columns:', Object.keys(showsData[0]));
+          console.log('Available columns:', Object.keys(showsData[0] as object));
           console.log('First row sample:', showsData[0]);
         }
         
         // Process shows - extract all data from Shows worksheet only
         console.log('\n=== PROCESSING SHOWS ===');
-        const newEvents: Omit<TheatreEvent, 'id'>[] = [];
-        const newTheatres = new Map<string, Omit<Theatre, 'website'>>();
+        const newEvents: ParsedTheatreEvent[] = [];
+        const newTheatres = new Map<string, Theatre>();
 
         for (const show of showsData) {
           console.log(`\n--- Processing show ${newEvents.length + 1} ---`);
@@ -191,7 +193,7 @@ export function parseExcelFile(file: File): Promise<ParseResult> {
           const theatreName = cleanText((show as any)['Theatre']);
           const address = cleanText((show as any)['Address']);
           
-          const event: Omit<TheatreEvent, 'id'> = {
+          const event: ParsedTheatreEvent = {
             title: cleanText((show as any)['Name']),
             theatreName: companyName || '',
             eventType: validateEventType(cleanText((show as any)['Type']) || 'Other'),

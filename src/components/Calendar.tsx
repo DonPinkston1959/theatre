@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Grid, List, Eye } from 'lucide-react';
 import { TheatreEvent, CalendarView } from '../types';
 import EventPopup from './EventPopup';
+import { toLocalDateString } from '../utils/date';
 
 interface CalendarProps {
   events: TheatreEvent[];
@@ -25,7 +26,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, view, onViewC
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateString(date);
     return events
       .filter(event => event.date === dateStr)
       .sort((a, b) => a.time.localeCompare(b.time));
@@ -389,7 +390,6 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, view, onViewC
 };
 
 export default Calendar;
-
 
 
 

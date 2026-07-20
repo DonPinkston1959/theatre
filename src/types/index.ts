@@ -9,20 +9,27 @@ export interface TheatreEvent {
   websiteUrl: string;
   ticketUrl?: string;
   venue?: string;
+  venueAddress?: string;
   price?: string;
   signLanguageInterpreting?: boolean;
+  organizationType: OrganizationType;
 }
+
+export type OrganizationType = 'High School' | 'Community' | 'Professional / Other';
 
 export interface Theatre {
   name: string;
   website: string;
   address?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface FilterOptions {
   theatreCompanies: string[];
   theatres: string[];
   eventTypes: string[];
+  organizationTypes: OrganizationType[];
   startDate?: string;
   endDate?: string;
   timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'all';

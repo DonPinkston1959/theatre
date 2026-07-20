@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Clock, MapPin, ExternalLink, Tag, DollarSign, Accessibility } from 'lucide-react';
+import { X, Clock, MapPin, ExternalLink, Tag, DollarSign, Accessibility, Navigation } from 'lucide-react';
 import { TheatreEvent } from '../types';
+import { parseLocalDate } from '../utils/date';
 
 interface EventPopupProps {
   event: TheatreEvent;
@@ -9,9 +10,7 @@ interface EventPopupProps {
 
 const EventPopup: React.FC<EventPopupProps> = ({ event, onClose }) => {
   const formatDate = (dateStr: string) => {
-    // Parse date string as UTC to avoid timezone shifts
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
+    const date = parseLocalDate(dateStr);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -68,6 +67,7 @@ const EventPopup: React.FC<EventPopupProps> = ({ event, onClose }) => {
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            aria-label="Close event details"
           >
             <X className="w-5 h-5" />
           </button>
@@ -91,6 +91,20 @@ const EventPopup: React.FC<EventPopupProps> = ({ event, onClose }) => {
               <p className="font-medium">{event.theatreName}</p>
               {event.venue && event.venue !== event.theatreName && (
                 <p className="text-sm text-gray-600">{event.venue}</p>
+              )}
+              {event.venueAddress && (
+                <>
+                  <p className="mt-1 text-sm text-gray-600">{event.venueAddress}</p>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venueAddress)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center text-sm font-medium text-red-800 hover:text-red-900 hover:underline"
+                  >
+                    <Navigation className="mr-1 h-4 w-4" />
+                    Get Directions
+                  </a>
+                </>
               )}
             </div>
           </div>

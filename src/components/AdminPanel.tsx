@@ -1,19 +1,64 @@
 import React, { useState } from 'react';
-import { Upload, Lock, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, Lock, AlertCircle, CheckCircle, X, FileSearch } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { parseExcelFile } from '../utils/excelParser';
+import { ParseResult, parseExcelFile } from '../utils/excelParser';
+import { TheatreEvent } from '../types';
+import ActivityDashboard from './ActivityDashboard';
+import { toLocalDateString } from '../utils/date';
 
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onDataUpdate: () => void;
+  events: TheatreEvent[];
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }) => {
+interface UploadPreview {
+  added: number;
+  removed: number;
+  unchanged: number;
+  duplicates: number;
+  pastEvents: number;
+  firstDate?: string;
+  lastDate?: string;
+  uniqueEvents: ParseResult['events'];
+}
+
+const eventKey = (event: Pick<TheatreEvent, 'title' | 'theatreName' | 'date' | 'time'>) =>
+  [event.title, event.theatreName, event.date, event.time.split(':').slice(0, 2).join(':')]
+    .map(value => value.trim().toLowerCase())
+    .join('|');
+
+const createUploadPreview = (parseResult: ParseResult, currentEvents: TheatreEvent[]): UploadPreview => {
+  const uniqueEvents = parseResult.events.filter((event, index, array) =>
+    array.findIndex(candidate => eventKey(candidate) === eventKey(event)) === index
+  );
+  const incomingKeys = new Set(uniqueEvents.map(eventKey));
+  const currentKeys = new Set(currentEvents.map(eventKey));
+  const dates = uniqueEvents.map(event => event.date).filter(Boolean).sort();
+  const today = toLocalDateString(new Date());
+
+  return {
+    added: [...incomingKeys].filter(key => !currentKeys.has(key)).length,
+    removed: [...currentKeys].filter(key => !incomingKeys.has(key)).length,
+    unchanged: [...incomingKeys].filter(key => currentKeys.has(key)).length,
+    duplicates: parseResult.events.length - uniqueEvents.length,
+    pastEvents: uniqueEvents.filter(event => event.date < today).length,
+    firstDate: dates[0],
+    lastDate: dates[dates.length - 1],
+    uniqueEvents
+  };
+};
+
+const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate, events }) => {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
+  const [preview, setPreview] = useState<UploadPreview | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -31,11 +76,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
     }
   };
 
+  const handleFileChange = async (selectedFile: File | null) => {
+    setFile(selectedFile);
+    setParseResult(null);
+    setPreview(null);
+    setConfirmed(false);
+    setMessage(null);
+
+    if (!selectedFile) return;
+
+    setParsing(true);
+    try {
+      const result = await parseExcelFile(selectedFile);
+      setParseResult(result);
+      setPreview(createUploadPreview(result, events));
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Could not read that spreadsheet.'
+      });
+    } finally {
+      setParsing(false);
+    }
+  };
+
   const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!file) {
-      setMessage({ type: 'error', text: 'Please select a file' });
+    if (!file || !parseResult || !preview || preview.uniqueEvents.length === 0 || !confirmed) {
+      setMessage({ type: 'error', text: 'Please select and review a valid file first.' });
       return;
     }
 
@@ -43,23 +112,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
     setMessage(null);
 
     try {
-      // Parse Excel file
-      console.log('Starting Excel file processing...');
-      const parseResult = await parseExcelFile(file);
-      console.log('Excel parsing completed:', parseResult);
-
-      // Delete all existing events first
-      console.log('Clearing existing events...');
-      const { error: deleteError } = await supabase
-        .from('events')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
-
-      if (deleteError) {
-        console.error('Error clearing existing events:', deleteError);
-        throw deleteError;
-      }
-
       // Insert theatres first
       let addedTheatres = 0;
       if (parseResult.theatres.length > 0) {
@@ -87,53 +139,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
         addedTheatres = insertedTheatres?.length || 0;
       }
 
-      // Insert events
-      let addedEvents = 0;
-      if (parseResult.events.length > 0) {
-        // Remove duplicates within the batch before inserting
-        const uniqueEvents = parseResult.events.filter((event, index, array) => {
-          return array.findIndex(e =>
-            e.title === event.title &&
-            e.theatreName === event.theatreName &&
-            e.date === event.date &&
-            e.time === event.time
-          ) === index;
-        });
+      // Replace the event collection in one database transaction. If any row is
+      // invalid, Postgres rolls the whole operation back and keeps the old list.
+      const eventRows = preview.uniqueEvents.map(event => ({
+        title: event.title,
+        theatre_name: event.theatreName,
+        event_type: event.eventType,
+        date: event.date,
+        time: event.time,
+        description: event.description || null,
+        website_url: event.websiteUrl || null,
+        ticket_url: event.ticketUrl || null,
+        venue: event.venue || null,
+        price: event.price || null,
+        sign_language_interpreting: event.signLanguageInterpreting
+      }));
+      const { data: addedEvents, error: eventsError } = await supabase
+        .rpc('replace_events', { new_events: eventRows });
 
-        console.log(`Filtered ${parseResult.events.length} events down to ${uniqueEvents.length} unique events`);
-
-        const { data: insertedEvents, error: eventsError } = await supabase
-          .from('events')
-          .insert(
-            uniqueEvents.map(event => ({
-              title: event.title,
-              theatre_name: event.theatreName,
-              event_type: event.eventType,
-              date: event.date,
-              time: event.time,
-              description: event.description || null,
-              website_url: event.websiteUrl || null,
-              ticket_url: event.ticketUrl || null,
-              venue: event.venue || null,
-              price: event.price || null,
-              sign_language_interpreting: event.signLanguageInterpreting
-            }))
-          )
-          .select();
-
-        if (eventsError) {
-          console.error('Events insertion error:', eventsError);
-          throw eventsError;
-        }
-        addedEvents = insertedEvents?.length || 0;
+      if (eventsError) {
+        console.error('Event replacement error:', eventsError);
+        throw eventsError;
       }
 
       setMessage({
         type: 'success',
-        text: `Successfully processed ${parseResult.companiesProcessed} companies and ${parseResult.showsProcessed} shows! Added/updated ${addedEvents} events and ${addedTheatres} theatres to the database.`
+        text: `Successfully processed ${parseResult.companiesProcessed} companies and ${parseResult.showsProcessed} shows! Added/updated ${addedEvents || 0} events and ${addedTheatres} theatres to the database.`
       });
       
       setFile(null);
+      setParseResult(null);
+      setPreview(null);
+      setConfirmed(false);
       // Reset file input
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
@@ -156,6 +193,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
       setIsAuthenticated(false);
     }
     setFile(null);
+    setParseResult(null);
+    setPreview(null);
+    setConfirmed(false);
     setMessage(null);
     onClose();
   };
@@ -164,7 +204,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 flex items-center">
@@ -174,6 +214,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            aria-label="Close admin panel"
           >
             <X className="w-5 h-5" />
           </button>
@@ -231,12 +272,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
                 </div>
               </div>
 
-              {uploading && (
+              {(uploading || parsing) && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
                   <div className="text-yellow-800">
-                    <p className="font-medium">Processing your Excel file...</p>
-                    <p className="text-sm">Reading Show/Shows tab</p>
+                    <p className="font-medium">{parsing ? 'Reviewing your Excel file...' : 'Updating the event database...'}</p>
+                    <p className="text-sm">{parsing ? 'No database changes are being made yet.' : 'Please keep this window open.'}</p>
                   </div>
                 </div>
               )}
@@ -249,9 +290,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
                   <input
                     type="file"
                     accept=".xlsx,.xls"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    onChange={(e) => void handleFileChange(e.target.files?.[0] || null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    disabled={uploading}
+                    disabled={uploading || parsing}
                     required
                   />
                   {file && (
@@ -261,9 +302,54 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
                   )}
                 </div>
 
+                {preview && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <h4 className="mb-3 flex items-center font-medium text-blue-900">
+                      <FileSearch className="mr-2 h-4 w-4" />
+                      Review before replacing events
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+                      <div><strong>{preview.added}</strong><br /><span className="text-blue-800">new</span></div>
+                      <div><strong>{preview.unchanged}</strong><br /><span className="text-blue-800">unchanged</span></div>
+                      <div><strong>{preview.removed}</strong><br /><span className="text-blue-800">removed</span></div>
+                      <div><strong>{preview.duplicates}</strong><br /><span className="text-blue-800">duplicates skipped</span></div>
+                    </div>
+                    <p className="mt-3 text-xs text-blue-800">
+                      {preview.uniqueEvents.length} unique performances from {preview.firstDate || 'unknown'} through {preview.lastDate || 'unknown'}.
+                    </p>
+                    {preview.pastEvents > 0 && (
+                      <p className="mt-2 text-xs font-medium text-amber-800">
+                        {preview.pastEvents} past performances will be stored for history but hidden from visitors.
+                      </p>
+                    )}
+                    {preview.removed > Math.max(preview.unchanged, 50) && (
+                      <p className="mt-2 text-xs font-medium text-red-800">
+                        Large removal detected. Confirm that this is the complete master spreadsheet.
+                      </p>
+                    )}
+                    {preview.uniqueEvents.length === 0 && (
+                      <p className="mt-2 text-xs font-medium text-red-800">
+                        This spreadsheet contains no valid performances and cannot be imported.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {preview && preview.uniqueEvents.length > 0 && (
+                  <label className="flex items-start rounded-lg border border-gray-200 p-3 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmed}
+                      onChange={(event) => setConfirmed(event.target.checked)}
+                      className="mr-3 mt-0.5 h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-500"
+                    />
+                    I reviewed this summary and confirm this is the complete master spreadsheet.
+                  </label>
+                )}
+
                 <button
                   type="submit"
-                  disabled={uploading || !file}
+                  disabled={uploading || parsing || !file || !preview || preview.uniqueEvents.length === 0 || !confirmed}
                   className="w-full bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-900 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center"
                 >
                   {uploading ? (
@@ -274,11 +360,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onDataUpdate }
                   ) : (
                     <>
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload Events
+                      Replace Events After Review
                     </>
                   )}
                 </button>
               </form>
+
+              <ActivityDashboard isActive={isAuthenticated} />
             </div>
           )}
 
